@@ -7,6 +7,9 @@ import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -25,6 +28,8 @@ import dev.thalha.cabslip.ui.components.saveSignatureFromPath
 import dev.thalha.cabslip.utils.PdfGenerator
 import dev.thalha.cabslip.utils.ShareUtils
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -47,6 +52,8 @@ fun EditReceiptScreen(
     // Form state
     var boardingLocation by remember { mutableStateOf("") }
     var destination by remember { mutableStateOf("") }
+    var tripStartDate by remember { mutableStateOf(System.currentTimeMillis()) }
+    var tripEndDate by remember { mutableStateOf<Long?>(null) }
     var pricePerKm by remember { mutableStateOf("") }
     var waitingChargePerHr by remember { mutableStateOf("") }
     var waitingHrs by remember { mutableStateOf("") }
@@ -63,6 +70,32 @@ fun EditReceiptScreen(
     var hasNewSignature by remember { mutableStateOf(false) }
     var existingSignaturePath by remember { mutableStateOf<String?>(null) }
 
+    // Date formatters
+    val dateFormatter = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
+    val timeFormatter = remember { SimpleDateFormat("hh:mm a", Locale.getDefault()) }
+
+    // Date picker states
+    var showStartDatePicker by remember { mutableStateOf(false) }
+    var showStartTimePicker by remember { mutableStateOf(false) }
+    var showEndDatePicker by remember { mutableStateOf(false) }
+    var showEndTimePicker by remember { mutableStateOf(false) }
+
+    // Helper function to combine date and time
+    fun combineDateTime(dateMillis: Long, timeMillis: Long): Long {
+        val calendar = Calendar.getInstance()
+        val dateCalendar = Calendar.getInstance().apply { timeInMillis = dateMillis }
+        val timeCalendar = Calendar.getInstance().apply { timeInMillis = timeMillis }
+
+        calendar.set(
+            dateCalendar.get(Calendar.YEAR),
+            dateCalendar.get(Calendar.MONTH),
+            dateCalendar.get(Calendar.DAY_OF_MONTH),
+            timeCalendar.get(Calendar.HOUR_OF_DAY),
+            timeCalendar.get(Calendar.MINUTE)
+        )
+        return calendar.timeInMillis
+    }
+
     // Load receipt data
     LaunchedEffect(receiptId) {
         try {
@@ -73,6 +106,8 @@ fun EditReceiptScreen(
                 // Populate form fields
                 boardingLocation = loadedReceipt.boardingLocation
                 destination = loadedReceipt.destination
+                tripStartDate = loadedReceipt.tripStartDate
+                tripEndDate = loadedReceipt.tripEndDate
                 pricePerKm = loadedReceipt.pricePerKm.toString()
                 waitingChargePerHr = loadedReceipt.waitingChargePerHr.toString()
                 waitingHrs = loadedReceipt.waitingHrs.toString()
@@ -232,6 +267,100 @@ fun EditReceiptScreen(
                     label = { Text("Vehicle Number *") },
                     modifier = Modifier.fillMaxWidth()
                 )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Trip Start Date and Time
+                Text(
+                    text = "Trip Start Date & Time *",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = dateFormatter.format(Date(tripStartDate)),
+                        onValueChange = { },
+                        label = { Text("Start Date") },
+                        modifier = Modifier.weight(1f),
+                        readOnly = true,
+                        trailingIcon = {
+                            IconButton(onClick = { showStartDatePicker = true }) {
+                                Icon(Icons.Default.DateRange, contentDescription = "Select Date")
+                            }
+                        }
+                    )
+
+                    OutlinedTextField(
+                        value = timeFormatter.format(Date(tripStartDate)),
+                        onValueChange = { },
+                        label = { Text("Start Time") },
+                        modifier = Modifier.weight(1f),
+                        readOnly = true,
+                        trailingIcon = {
+                            IconButton(onClick = { showStartTimePicker = true }) {
+                                Icon(Icons.Default.Edit, contentDescription = "Select Time")
+                            }
+                        }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Trip End Date and Time (Optional)
+                Text(
+                    text = "Trip End Date & Time (Optional)",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = tripEndDate?.let { dateFormatter.format(Date(it)) } ?: "",
+                        onValueChange = { },
+                        label = { Text("End Date") },
+                        modifier = Modifier.weight(1f),
+                        readOnly = true,
+                        trailingIcon = {
+                            Row {
+                                if (tripEndDate != null) {
+                                    IconButton(onClick = { tripEndDate = null }) {
+                                        Icon(Icons.Default.Clear, contentDescription = "Clear Date")
+                                    }
+                                }
+                                IconButton(onClick = { showEndDatePicker = true }) {
+                                    Icon(Icons.Default.DateRange, contentDescription = "Select Date")
+                                }
+                            }
+                        }
+                    )
+
+                    OutlinedTextField(
+                        value = tripEndDate?.let { timeFormatter.format(Date(it)) } ?: "",
+                        onValueChange = { },
+                        label = { Text("End Time") },
+                        modifier = Modifier.weight(1f),
+                        readOnly = true,
+                        trailingIcon = {
+                            IconButton(
+                                onClick = { showEndTimePicker = true },
+                                enabled = tripEndDate != null
+                            ) {
+                                Icon(Icons.Default.Edit, contentDescription = "Select Time")
+                            }
+                        }
+                    )
+                }
             }
         }
 
@@ -495,32 +624,32 @@ fun EditReceiptScreen(
 
                     scope.launch {
                         try {
-                            // DEBUG: Log signature state
+                            // Handle signature saving logic
                             Log.d("EditReceiptScreen", "=== SIGNATURE DEBUG ===")
                             Log.d("EditReceiptScreen", "hasNewSignature: $hasNewSignature")
                             Log.d("EditReceiptScreen", "signaturePath isEmpty: ${signaturePath?.isEmpty}")
                             Log.d("EditReceiptScreen", "existingSignaturePath: $existingSignaturePath")
 
-                            // Save signature first if there's a new one drawn
-                            val finalSignaturePath = if (hasNewSignature && signaturePath != null && !signaturePath!!.isEmpty) {
+                            val finalSignaturePath = if (hasNewSignature && signaturePath != null) {
                                 Log.d("EditReceiptScreen", "Saving new signature...")
                                 val newPath = saveSignatureFromPath(context, signaturePath, density)
                                 Log.d("EditReceiptScreen", "New signature saved to: $newPath")
                                 newPath
-                            } else if (hasNewSignature && (signaturePath == null || signaturePath!!.isEmpty)) {
+                            } else if (hasNewSignature && signaturePath == null) {
                                 Log.d("EditReceiptScreen", "hasNewSignature=true but no valid path - this is a bug in SignatureCapture, keeping existing")
-                                existingSignaturePath // Keep existing signature if component sent wrong signal
+                                existingSignaturePath
                             } else {
                                 Log.d("EditReceiptScreen", "Keeping existing signature: $existingSignaturePath")
-                                existingSignaturePath // Keep existing signature if no new one
+                                existingSignaturePath
                             }
 
-                            Log.d("EditReceiptScreen", "Final signature path: $finalSignaturePath")
+                            val currentTime = System.currentTimeMillis()
 
-                            val currentReceipt = receipt!!
-                            val updatedReceipt = currentReceipt.copy(
+                            val updatedReceipt = receipt!!.copy(
                                 boardingLocation = boardingLocation.trim(),
                                 destination = destination.trim(),
+                                tripStartDate = tripStartDate,
+                                tripEndDate = tripEndDate,
                                 pricePerKm = priceKm,
                                 waitingChargePerHr = waitingChargePerHr.toDoubleOrNull() ?: 0.0,
                                 waitingHrs = waitingHrs.toDoubleOrNull() ?: 0.0,
@@ -534,15 +663,13 @@ fun EditReceiptScreen(
                                 baseFare = calculatedTotals.first,
                                 waitingFee = calculatedTotals.second,
                                 totalFee = calculatedTotals.third,
-                                updatedAt = System.currentTimeMillis()
+                                updatedAt = currentTime
                             )
 
-                            Log.d("EditReceiptScreen", "Updating receipt with signature: ${updatedReceipt.ownerSignaturePath}")
                             repository.updateReceipt(updatedReceipt)
-                            receipt = updatedReceipt // Update local receipt state
-                            Log.d("EditReceiptScreen", "Receipt updated successfully!")
+                            errorMessage = ""
+                            onReceiptUpdated()
                         } catch (e: Exception) {
-                            Log.e("EditReceiptScreen", "Error updating receipt: ${e.message}", e)
                             errorMessage = "Failed to update receipt. Please try again."
                         } finally {
                             isSaving = false
@@ -561,43 +688,139 @@ fun EditReceiptScreen(
                     Text("Update Receipt")
                 }
             }
-
-            // Share Button - NEW: Added to edit screen
-            Button(
-                onClick = {
-                    scope.launch {
-                        try {
-                            val cabInfo = repository.getCabInfoSync()
-                            if (cabInfo != null && receipt != null) {
-                                val pdfPath = PdfGenerator.generateReceiptPdf(context, receipt!!, cabInfo)
-                                if (pdfPath != null) {
-                                    ShareUtils.sharePdf(context, pdfPath, receipt!!.receiptId)
-                                }
-                            }
-                        } catch (e: Exception) {
-                            // Handle error
-                        }
-                    }
-                },
-                modifier = Modifier.weight(1f)
-            ) {
-                Icon(Icons.Default.Share, contentDescription = null)
-                Spacer(modifier = Modifier.width(8.dp))
-                Text("Share PDF")
-            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Done Button - NEW: Added navigation back button
-        Button(
-            onClick = onReceiptUpdated,
-            modifier = Modifier.fillMaxWidth(),
-            colors = ButtonDefaults.buttonColors(
-                containerColor = MaterialTheme.colorScheme.secondary
+        // Date Picker Dialogs
+        if (showStartDatePicker) {
+            EditDatePickerDialog(
+                onDateSelected = { selectedDate ->
+                    tripStartDate = combineDateTime(selectedDate, tripStartDate)
+                    showStartDatePicker = false
+                },
+                onDismiss = { showStartDatePicker = false }
             )
+        }
+
+        if (showStartTimePicker) {
+            EditTimePickerDialog(
+                onTimeSelected = { selectedTime ->
+                    tripStartDate = combineDateTime(tripStartDate, selectedTime)
+                    showStartTimePicker = false
+                },
+                onDismiss = { showStartTimePicker = false }
+            )
+        }
+
+        if (showEndDatePicker) {
+            EditDatePickerDialog(
+                onDateSelected = { selectedDate ->
+                    val currentEndTime = tripEndDate ?: System.currentTimeMillis()
+                    tripEndDate = combineDateTime(selectedDate, currentEndTime)
+                    showEndDatePicker = false
+                },
+                onDismiss = { showEndDatePicker = false }
+            )
+        }
+
+        if (showEndTimePicker) {
+            EditTimePickerDialog(
+                onTimeSelected = { selectedTime ->
+                    val currentEndDate = tripEndDate ?: System.currentTimeMillis()
+                    tripEndDate = combineDateTime(currentEndDate, selectedTime)
+                    showEndTimePicker = false
+                },
+                onDismiss = { showEndTimePicker = false }
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditDatePickerDialog(
+    onDateSelected: (Long) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = System.currentTimeMillis()
+    )
+
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    datePickerState.selectedDateMillis?.let { selectedDate ->
+                        onDateSelected(selectedDate)
+                    }
+                }
+            ) {
+                Text("OK")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    ) {
+        DatePicker(state = datePickerState)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun EditTimePickerDialog(
+    onTimeSelected: (Long) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val timePickerState = rememberTimePickerState()
+
+    androidx.compose.ui.window.Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = androidx.compose.foundation.shape.RoundedCornerShape(16.dp),
         ) {
-            Text("Done")
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Select Time",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                TimePicker(state = timePickerState)
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("Cancel")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    TextButton(
+                        onClick = {
+                            val calendar = Calendar.getInstance()
+                            calendar.set(Calendar.HOUR_OF_DAY, timePickerState.hour)
+                            calendar.set(Calendar.MINUTE, timePickerState.minute)
+                            onTimeSelected(calendar.timeInMillis)
+                        }
+                    ) {
+                        Text("OK")
+                    }
+                }
+            }
         }
     }
 }

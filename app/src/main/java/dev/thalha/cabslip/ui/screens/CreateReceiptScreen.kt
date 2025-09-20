@@ -4,8 +4,12 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
+import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Share
+import androidx.compose.material.icons.filled.DateRange
+import androidx.compose.material.icons.filled.Edit
+import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -16,6 +20,7 @@ import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.compose.ui.window.Dialog
 import dev.thalha.cabslip.data.database.CabSlipDatabase
 import dev.thalha.cabslip.data.entity.Receipt
 import dev.thalha.cabslip.data.repository.CabSlipRepository
@@ -24,6 +29,8 @@ import dev.thalha.cabslip.ui.components.saveSignatureFromPath
 import dev.thalha.cabslip.utils.PdfGenerator
 import dev.thalha.cabslip.utils.ShareUtils
 import kotlinx.coroutines.launch
+import java.text.SimpleDateFormat
+import java.util.*
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -62,6 +69,32 @@ fun CreateReceiptScreen(
     var errorMessage by remember { mutableStateOf("") }
     var savedReceiptId by remember { mutableStateOf<String?>(null) }
     var showShareButton by remember { mutableStateOf(false) }
+
+    // Date formatters
+    val dateFormatter = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
+    val timeFormatter = remember { SimpleDateFormat("hh:mm a", Locale.getDefault()) }
+
+    // Date picker states
+    var showStartDatePicker by remember { mutableStateOf(false) }
+    var showStartTimePicker by remember { mutableStateOf(false) }
+    var showEndDatePicker by remember { mutableStateOf(false) }
+    var showEndTimePicker by remember { mutableStateOf(false) }
+
+    // Helper function to combine date and time
+    fun combineDateTime(dateMillis: Long, timeMillis: Long): Long {
+        val calendar = Calendar.getInstance()
+        val dateCalendar = Calendar.getInstance().apply { timeInMillis = dateMillis }
+        val timeCalendar = Calendar.getInstance().apply { timeInMillis = timeMillis }
+
+        calendar.set(
+            dateCalendar.get(Calendar.YEAR),
+            dateCalendar.get(Calendar.MONTH),
+            dateCalendar.get(Calendar.DAY_OF_MONTH),
+            timeCalendar.get(Calendar.HOUR_OF_DAY),
+            timeCalendar.get(Calendar.MINUTE)
+        )
+        return calendar.timeInMillis
+    }
 
     // Calculated totals
     val calculatedTotals = remember(pricePerKm, totalKm, waitingChargePerHr, waitingHrs, tollParking, bata) {
@@ -135,6 +168,100 @@ fun CreateReceiptScreen(
                     modifier = Modifier.fillMaxWidth(),
                     isError = vehicleNumber.isBlank() && errorMessage.isNotEmpty()
                 )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Trip Start Date and Time
+                Text(
+                    text = "Trip Start Date & Time *",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = dateFormatter.format(Date(tripStartDate)),
+                        onValueChange = { },
+                        label = { Text("Start Date") },
+                        modifier = Modifier.weight(1f),
+                        readOnly = true,
+                        trailingIcon = {
+                            IconButton(onClick = { showStartDatePicker = true }) {
+                                Icon(Icons.Default.DateRange, contentDescription = "Select Date")
+                            }
+                        }
+                    )
+
+                    OutlinedTextField(
+                        value = timeFormatter.format(Date(tripStartDate)),
+                        onValueChange = { },
+                        label = { Text("Start Time") },
+                        modifier = Modifier.weight(1f),
+                        readOnly = true,
+                        trailingIcon = {
+                            IconButton(onClick = { showStartTimePicker = true }) {
+                                Icon(Icons.Default.Edit, contentDescription = "Select Time")
+                            }
+                        }
+                    )
+                }
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                // Trip End Date and Time (Optional)
+                Text(
+                    text = "Trip End Date & Time (Optional)",
+                    fontSize = 14.sp,
+                    fontWeight = FontWeight.Medium
+                )
+
+                Spacer(modifier = Modifier.height(8.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.spacedBy(8.dp)
+                ) {
+                    OutlinedTextField(
+                        value = tripEndDate?.let { dateFormatter.format(Date(it)) } ?: "",
+                        onValueChange = { },
+                        label = { Text("End Date") },
+                        modifier = Modifier.weight(1f),
+                        readOnly = true,
+                        trailingIcon = {
+                            Row {
+                                if (tripEndDate != null) {
+                                    IconButton(onClick = { tripEndDate = null }) {
+                                        Icon(Icons.Default.Clear, contentDescription = "Clear Date")
+                                    }
+                                }
+                                IconButton(onClick = { showEndDatePicker = true }) {
+                                    Icon(Icons.Default.DateRange, contentDescription = "Select Date")
+                                }
+                            }
+                        }
+                    )
+
+                    OutlinedTextField(
+                        value = tripEndDate?.let { timeFormatter.format(Date(it)) } ?: "",
+                        onValueChange = { },
+                        label = { Text("End Time") },
+                        modifier = Modifier.weight(1f),
+                        readOnly = true,
+                        trailingIcon = {
+                            IconButton(
+                                onClick = { showEndTimePicker = true },
+                                enabled = tripEndDate != null
+                            ) {
+                                Icon(Icons.Default.Edit, contentDescription = "Select Time")
+                            }
+                        }
+                    )
+                }
             }
         }
 
@@ -493,5 +620,136 @@ fun CreateReceiptScreen(
         }
 
         Spacer(modifier = Modifier.height(16.dp))
+
+        // Date Picker Dialogs
+        if (showStartDatePicker) {
+            DatePickerDialog(
+                onDateSelected = { selectedDate ->
+                    tripStartDate = combineDateTime(selectedDate, tripStartDate)
+                    showStartDatePicker = false
+                },
+                onDismiss = { showStartDatePicker = false }
+            )
+        }
+
+        if (showStartTimePicker) {
+            TimePickerDialog(
+                onTimeSelected = { selectedTime ->
+                    tripStartDate = combineDateTime(tripStartDate, selectedTime)
+                    showStartTimePicker = false
+                },
+                onDismiss = { showStartTimePicker = false }
+            )
+        }
+
+        if (showEndDatePicker) {
+            DatePickerDialog(
+                onDateSelected = { selectedDate ->
+                    val currentEndTime = tripEndDate ?: System.currentTimeMillis()
+                    tripEndDate = combineDateTime(selectedDate, currentEndTime)
+                    showEndDatePicker = false
+                },
+                onDismiss = { showEndDatePicker = false }
+            )
+        }
+
+        if (showEndTimePicker) {
+            TimePickerDialog(
+                onTimeSelected = { selectedTime ->
+                    val currentEndDate = tripEndDate ?: System.currentTimeMillis()
+                    tripEndDate = combineDateTime(currentEndDate, selectedTime)
+                    showEndTimePicker = false
+                },
+                onDismiss = { showEndTimePicker = false }
+            )
+        }
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun DatePickerDialog(
+    onDateSelected: (Long) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val datePickerState = rememberDatePickerState(
+        initialSelectedDateMillis = System.currentTimeMillis()
+    )
+
+    DatePickerDialog(
+        onDismissRequest = onDismiss,
+        confirmButton = {
+            TextButton(
+                onClick = {
+                    datePickerState.selectedDateMillis?.let { selectedDate ->
+                        onDateSelected(selectedDate)
+                    }
+                }
+            ) {
+                Text("OK")
+            }
+        },
+        dismissButton = {
+            TextButton(onClick = onDismiss) {
+                Text("Cancel")
+            }
+        }
+    ) {
+        DatePicker(state = datePickerState)
+    }
+}
+
+@OptIn(ExperimentalMaterial3Api::class)
+@Composable
+fun TimePickerDialog(
+    onTimeSelected: (Long) -> Unit,
+    onDismiss: () -> Unit
+) {
+    val timePickerState = rememberTimePickerState()
+
+    Dialog(onDismissRequest = onDismiss) {
+        Card(
+            modifier = Modifier
+                .fillMaxWidth()
+                .padding(16.dp),
+            shape = RoundedCornerShape(16.dp),
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp),
+                horizontalAlignment = androidx.compose.ui.Alignment.CenterHorizontally
+            ) {
+                Text(
+                    text = "Select Time",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.Medium
+                )
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                TimePicker(state = timePickerState)
+
+                Spacer(modifier = Modifier.height(16.dp))
+
+                Row(
+                    modifier = Modifier.fillMaxWidth(),
+                    horizontalArrangement = Arrangement.End
+                ) {
+                    TextButton(onClick = onDismiss) {
+                        Text("Cancel")
+                    }
+                    Spacer(modifier = Modifier.width(8.dp))
+                    TextButton(
+                        onClick = {
+                            val calendar = Calendar.getInstance()
+                            calendar.set(Calendar.HOUR_OF_DAY, timePickerState.hour)
+                            calendar.set(Calendar.MINUTE, timePickerState.minute)
+                            onTimeSelected(calendar.timeInMillis)
+                        }
+                    ) {
+                        Text("OK")
+                    }
+                }
+            }
+        }
     }
 }
