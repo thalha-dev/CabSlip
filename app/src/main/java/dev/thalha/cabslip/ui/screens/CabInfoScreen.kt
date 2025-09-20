@@ -13,6 +13,7 @@ import androidx.compose.ui.unit.sp
 import dev.thalha.cabslip.data.database.CabSlipDatabase
 import dev.thalha.cabslip.data.entity.CabInfo
 import dev.thalha.cabslip.data.repository.CabSlipRepository
+import dev.thalha.cabslip.ui.components.LogoUpload
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -31,6 +32,7 @@ fun CabInfoScreen() {
     var primaryContact by remember { mutableStateOf("") }
     var secondaryContact by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
+    var logoPath by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(false) }
     var showSuccessMessage by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
@@ -43,6 +45,7 @@ fun CabInfoScreen() {
             primaryContact = info.primaryContact
             secondaryContact = info.secondaryContact ?: ""
             email = info.email
+            logoPath = info.logoPath
         }
     }
 
@@ -108,6 +111,16 @@ fun CabInfoScreen() {
             isError = email.isBlank() && errorMessage.isNotEmpty()
         )
 
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Logo Upload Section - NEW
+        LogoUpload(
+            existingLogoPath = logoPath,
+            onLogoSelected = { path ->
+                logoPath = path
+            }
+        )
+
         if (errorMessage.isNotEmpty()) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
@@ -150,7 +163,7 @@ fun CabInfoScreen() {
                             primaryContact = primaryContact.trim(),
                             secondaryContact = if (secondaryContact.isBlank()) null else secondaryContact.trim(),
                             email = email.trim(),
-                            logoPath = cabInfo?.logoPath,
+                            logoPath = logoPath,
                             createdAt = cabInfo?.createdAt ?: currentTime,
                             updatedAt = currentTime
                         )
@@ -169,7 +182,7 @@ fun CabInfoScreen() {
         ) {
             if (isLoading) {
                 CircularProgressIndicator(
-                    modifier = Modifier.size(16.dp),
+                    modifier = Modifier.size(20.dp),
                     strokeWidth = 2.dp
                 )
             } else {
