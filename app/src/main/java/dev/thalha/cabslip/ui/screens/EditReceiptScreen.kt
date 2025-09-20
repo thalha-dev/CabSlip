@@ -1,5 +1,6 @@
 package dev.thalha.cabslip.ui.screens
 
+import android.util.Log
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
@@ -9,7 +10,9 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
@@ -18,6 +21,7 @@ import dev.thalha.cabslip.data.database.CabSlipDatabase
 import dev.thalha.cabslip.data.entity.Receipt
 import dev.thalha.cabslip.data.repository.CabSlipRepository
 import dev.thalha.cabslip.ui.components.SignatureCapture
+import dev.thalha.cabslip.ui.components.saveSignatureFromPath
 import dev.thalha.cabslip.utils.PdfGenerator
 import dev.thalha.cabslip.utils.ShareUtils
 import kotlinx.coroutines.launch
@@ -29,6 +33,7 @@ fun EditReceiptScreen(
     onReceiptUpdated: () -> Unit
 ) {
     val context = LocalContext.current
+    val density = LocalDensity.current
     val scope = rememberCoroutineScope()
 
     val database = CabSlipDatabase.getDatabase(context)
@@ -53,6 +58,11 @@ fun EditReceiptScreen(
     var vehicleNumber by remember { mutableStateOf("") }
     var ownerSignaturePath by remember { mutableStateOf<String?>(null) }
 
+    // Signature state
+    var signaturePath by remember { mutableStateOf<Path?>(null) }
+    var hasNewSignature by remember { mutableStateOf(false) }
+    var existingSignaturePath by remember { mutableStateOf<String?>(null) }
+
     // Load receipt data
     LaunchedEffect(receiptId) {
         try {
@@ -73,6 +83,11 @@ fun EditReceiptScreen(
                 driverMobile = loadedReceipt.driverMobile
                 vehicleNumber = loadedReceipt.vehicleNumber
                 ownerSignaturePath = loadedReceipt.ownerSignaturePath
+
+                // Initialize signature state properly
+                existingSignaturePath = loadedReceipt.ownerSignaturePath
+                hasNewSignature = false
+                signaturePath = null
             } else {
                 errorMessage = "Receipt not found"
             }
@@ -345,8 +360,13 @@ fun EditReceiptScreen(
             ) {
                 SignatureCapture(
                     existingSignaturePath = ownerSignaturePath,
-                    onSignatureSaved = { signaturePath: String? ->
-                        ownerSignaturePath = signaturePath
+                    onSignatureChanged = { path, hasSignature, existingPath ->
+                        signaturePath = path
+                        hasNewSignature = hasSignature
+                        // Don't override existingSignaturePath if we get null (new signature drawn)
+                        if (existingPath != null) {
+                            existingSignaturePath = existingPath
+                        }
                     }
                 )
             }
@@ -441,9 +461,19 @@ fun EditReceiptScreen(
         ) {
             Button(
                 onClick = {
+                    Log.d("EditReceiptScreen", "UPDATE BUTTON CLICKED!")
+
                     // Validate required fields
+                    Log.d("EditReceiptScreen", "Validating fields:")
+                    Log.d("EditReceiptScreen", "boardingLocation: '$boardingLocation'")
+                    Log.d("EditReceiptScreen", "destination: '$destination'")
+                    Log.d("EditReceiptScreen", "vehicleNumber: '$vehicleNumber'")
+                    Log.d("EditReceiptScreen", "pricePerKm: '$pricePerKm'")
+                    Log.d("EditReceiptScreen", "totalKm: '$totalKm'")
+
                     if (boardingLocation.isBlank() || destination.isBlank() ||
                         vehicleNumber.isBlank() || pricePerKm.isBlank() || totalKm.isBlank()) {
+                        Log.d("EditReceiptScreen", "Validation FAILED - missing required fields")
                         errorMessage = "Please fill in all required fields"
                         return@Button
                     }
@@ -451,16 +481,42 @@ fun EditReceiptScreen(
                     // Validate numeric fields
                     val priceKm = pricePerKm.toDoubleOrNull()
                     val km = totalKm.toDoubleOrNull()
+                    Log.d("EditReceiptScreen", "Numeric validation: priceKm=$priceKm, km=$km")
+
                     if (priceKm == null || km == null || priceKm < 0 || km < 0) {
+                        Log.d("EditReceiptScreen", "Validation FAILED - invalid numbers")
                         errorMessage = "Please enter valid positive numbers for price and distance"
                         return@Button
                     }
 
+                    Log.d("EditReceiptScreen", "Validation PASSED - proceeding with update")
                     errorMessage = ""
                     isSaving = true
 
                     scope.launch {
                         try {
+                            // DEBUG: Log signature state
+                            Log.d("EditReceiptScreen", "=== SIGNATURE DEBUG ===")
+                            Log.d("EditReceiptScreen", "hasNewSignature: $hasNewSignature")
+                            Log.d("EditReceiptScreen", "signaturePath isEmpty: ${signaturePath?.isEmpty}")
+                            Log.d("EditReceiptScreen", "existingSignaturePath: $existingSignaturePath")
+
+                            // Save signature first if there's a new one drawn
+                            val finalSignaturePath = if (hasNewSignature && signaturePath != null && !signaturePath!!.isEmpty) {
+                                Log.d("EditReceiptScreen", "Saving new signature...")
+                                val newPath = saveSignatureFromPath(context, signaturePath, density)
+                                Log.d("EditReceiptScreen", "New signature saved to: $newPath")
+                                newPath
+                            } else if (hasNewSignature && (signaturePath == null || signaturePath!!.isEmpty)) {
+                                Log.d("EditReceiptScreen", "hasNewSignature=true but no valid path - this is a bug in SignatureCapture, keeping existing")
+                                existingSignaturePath // Keep existing signature if component sent wrong signal
+                            } else {
+                                Log.d("EditReceiptScreen", "Keeping existing signature: $existingSignaturePath")
+                                existingSignaturePath // Keep existing signature if no new one
+                            }
+
+                            Log.d("EditReceiptScreen", "Final signature path: $finalSignaturePath")
+
                             val currentReceipt = receipt!!
                             val updatedReceipt = currentReceipt.copy(
                                 boardingLocation = boardingLocation.trim(),
@@ -474,16 +530,19 @@ fun EditReceiptScreen(
                                 driverName = driverName.trim(),
                                 driverMobile = driverMobile.trim(),
                                 vehicleNumber = vehicleNumber.trim(),
-                                ownerSignaturePath = ownerSignaturePath,
+                                ownerSignaturePath = finalSignaturePath,
                                 baseFare = calculatedTotals.first,
                                 waitingFee = calculatedTotals.second,
                                 totalFee = calculatedTotals.third,
                                 updatedAt = System.currentTimeMillis()
                             )
 
+                            Log.d("EditReceiptScreen", "Updating receipt with signature: ${updatedReceipt.ownerSignaturePath}")
                             repository.updateReceipt(updatedReceipt)
                             receipt = updatedReceipt // Update local receipt state
+                            Log.d("EditReceiptScreen", "Receipt updated successfully!")
                         } catch (e: Exception) {
+                            Log.e("EditReceiptScreen", "Error updating receipt: ${e.message}", e)
                             errorMessage = "Failed to update receipt. Please try again."
                         } finally {
                             isSaving = false

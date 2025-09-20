@@ -2,6 +2,7 @@ package dev.thalha.cabslip.ui.components
 
 import android.graphics.Bitmap
 import android.graphics.Paint
+import android.util.Log
 import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
@@ -23,27 +24,27 @@ import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
 
 @Composable
 fun SignatureCapture(
     modifier: Modifier = Modifier,
-    onSignatureSaved: (String?) -> Unit = {},
+    onSignatureChanged: (Path?, Boolean, String?) -> Unit = { _, _, _ -> },
     existingSignaturePath: String? = null
 ) {
     val context = LocalContext.current
-    val scope = rememberCoroutineScope()
     val density = LocalDensity.current
 
     val path by remember { mutableStateOf(Path()) }
     var currentPosition by remember { mutableStateOf(Offset.Unspecified) }
-    var hasSignature by remember { mutableStateOf(false) }
+    var hasExistingSignature by remember { mutableStateOf(false) }
+    var hasNewlyDrawnSignature by remember { mutableStateOf(false) }
     var existingSignatureBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
     // Load existing signature if available
     LaunchedEffect(existingSignaturePath) {
+        Log.d("SignatureCapture", "Loading existing signature: $existingSignaturePath")
         if (!existingSignaturePath.isNullOrBlank()) {
             val file = File(existingSignaturePath)
             if (file.exists()) {
@@ -51,14 +52,28 @@ fun SignatureCapture(
                     val bitmap = android.graphics.BitmapFactory.decodeFile(existingSignaturePath)
                     if (bitmap != null) {
                         existingSignatureBitmap = bitmap
-                        hasSignature = true
+                        hasExistingSignature = true
+                        hasNewlyDrawnSignature = false
+                        Log.d("SignatureCapture", "Loaded existing signature, notifying parent")
+                        // Notify parent of existing signature - NOT a new one
+                        onSignatureChanged(null, false, existingSignaturePath)
                     }
                 } catch (_: Exception) {
                     existingSignatureBitmap = null
+                    hasExistingSignature = false
                 }
             }
         } else {
             existingSignatureBitmap = null
+            hasExistingSignature = false
+        }
+    }
+
+    // Only notify about NEW signatures when actually drawn
+    LaunchedEffect(hasNewlyDrawnSignature, path) {
+        if (hasNewlyDrawnSignature && !path.isEmpty) {
+            Log.d("SignatureCapture", "Notifying parent: NEW signature drawn")
+            onSignatureChanged(path, true, null)
         }
     }
 
@@ -98,12 +113,15 @@ fun SignatureCapture(
                         .pointerInput(true) {
                             detectDragGestures(
                                 onDragStart = { offset ->
+                                    Log.d("SignatureCapture", "onDragStart - user drawing NEW signature")
                                     // Clear existing signature when starting to draw new one
                                     existingSignatureBitmap = null
+                                    hasExistingSignature = false
                                     path.reset()
                                     path.moveTo(offset.x, offset.y)
                                     currentPosition = offset
-                                    hasSignature = true
+                                    hasNewlyDrawnSignature = true
+                                    Log.d("SignatureCapture", "hasNewlyDrawnSignature set to true")
                                 },
                                 onDrag = { change, _ ->
                                     path.lineTo(change.position.x, change.position.y)
@@ -136,8 +154,8 @@ fun SignatureCapture(
                         )
                     }
 
-                    // Draw the signature path in real-time
-                    if (currentPosition != Offset.Unspecified && !path.isEmpty) {
+                    // Draw the signature path in real-time (for newly drawn signatures)
+                    if (currentPosition != Offset.Unspecified && !path.isEmpty && hasNewlyDrawnSignature) {
                         drawPath(
                             path = path,
                             color = Color.Black,
@@ -150,7 +168,7 @@ fun SignatureCapture(
                     }
                 }
 
-                if (!hasSignature && currentPosition == Offset.Unspecified && existingSignatureBitmap == null) {
+                if (!hasExistingSignature && !hasNewlyDrawnSignature && currentPosition == Offset.Unspecified && existingSignatureBitmap == null) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -167,50 +185,36 @@ fun SignatureCapture(
 
         Spacer(modifier = Modifier.height(8.dp))
 
-        Row(
-            modifier = Modifier.fillMaxWidth(),
-            horizontalArrangement = Arrangement.spacedBy(8.dp)
-        ) {
+        // Only show Clear button
+        if (hasExistingSignature || hasNewlyDrawnSignature || existingSignatureBitmap != null) {
             OutlinedButton(
                 onClick = {
+                    Log.d("SignatureCapture", "Clear button clicked")
                     path.reset()
                     currentPosition = Offset.Unspecified
-                    hasSignature = false
+                    hasExistingSignature = false
+                    hasNewlyDrawnSignature = false
                     existingSignatureBitmap = null
-                    onSignatureSaved(null)
+                    onSignatureChanged(null, false, null)
                 },
-                modifier = Modifier.weight(1f)
+                modifier = Modifier.fillMaxWidth()
             ) {
-                Text("Clear")
-            }
-
-            Button(
-                onClick = {
-                    if (hasSignature) {
-                        scope.launch {
-                            try {
-                                val signaturePath = if (!path.isEmpty) {
-                                    // Save new drawn signature
-                                    saveSignatureToPng(context, path, density)
-                                } else {
-                                    // Keep existing signature
-                                    existingSignaturePath
-                                }
-                                onSignatureSaved(signaturePath)
-                            } catch (_: Exception) {
-                                onSignatureSaved(null)
-                            }
-                        }
-                    } else {
-                        onSignatureSaved(null)
-                    }
-                },
-                enabled = hasSignature,
-                modifier = Modifier.weight(1f)
-            ) {
-                Text("Save Signature")
+                Text("Clear Signature")
             }
         }
+    }
+}
+
+// Function to save signature path when needed
+fun saveSignatureFromPath(
+    context: android.content.Context,
+    path: Path?,
+    density: androidx.compose.ui.unit.Density
+): String? {
+    return if (path != null && !path.isEmpty) {
+        saveSignatureToPng(context, path, density)
+    } else {
+        null
     }
 }
 
