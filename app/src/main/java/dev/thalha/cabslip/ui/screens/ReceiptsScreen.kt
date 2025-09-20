@@ -15,7 +15,6 @@ import androidx.compose.ui.unit.sp
 import dev.thalha.cabslip.data.database.CabSlipDatabase
 import dev.thalha.cabslip.data.repository.CabSlipRepository
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReceiptsScreen(
     onReceiptClick: (String) -> Unit

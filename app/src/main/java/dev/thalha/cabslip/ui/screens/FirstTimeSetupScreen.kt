@@ -17,7 +17,6 @@ import dev.thalha.cabslip.data.repository.CabSlipRepository
 import dev.thalha.cabslip.ui.components.LogoUpload
 import kotlinx.coroutines.launch
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun FirstTimeSetupScreen(
     onSetupComplete: () -> Unit

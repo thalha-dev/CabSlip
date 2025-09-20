@@ -20,7 +20,6 @@ import dev.thalha.cabslip.data.repository.CabSlipRepository
 import java.text.SimpleDateFormat
 import java.util.*
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun HomeScreen(
     onReceiptClick: (String) -> Unit
@@ -85,7 +84,6 @@ fun HomeScreen(
     }
 }
 
-@OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun ReceiptCard(
     receipt: Receipt,
