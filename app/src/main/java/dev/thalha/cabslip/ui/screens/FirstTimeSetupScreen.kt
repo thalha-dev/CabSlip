@@ -49,6 +49,7 @@ fun FirstTimeSetupScreen(
     Column(
         modifier = Modifier
             .fillMaxSize()
+            .windowInsetsPadding(WindowInsets.systemBars)
             .padding(16.dp)
             .verticalScroll(rememberScrollState()),
         horizontalAlignment = Alignment.CenterHorizontally
@@ -184,5 +185,8 @@ fun FirstTimeSetupScreen(
                 Text("Complete Setup")
             }
         }
+
+        // Add extra bottom padding for better spacing
+        Spacer(modifier = Modifier.height(16.dp))
     }
 }
