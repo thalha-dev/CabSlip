@@ -279,36 +279,33 @@ fun EditReceiptScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Row(
+                OutlinedTextField(
+                    value = dateFormatter.format(Date(tripStartDate)),
+                    onValueChange = { },
+                    label = { Text("Start Date") },
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = dateFormatter.format(Date(tripStartDate)),
-                        onValueChange = { },
-                        label = { Text("Start Date") },
-                        modifier = Modifier.weight(1f),
-                        readOnly = true,
-                        trailingIcon = {
-                            IconButton(onClick = { showStartDatePicker = true }) {
-                                Icon(Icons.Default.DateRange, contentDescription = "Select Date")
-                            }
+                    readOnly = true,
+                    trailingIcon = {
+                        IconButton(onClick = { showStartDatePicker = true }) {
+                            Icon(Icons.Default.DateRange, contentDescription = "Select Date")
                         }
-                    )
+                    }
+                )
 
-                    OutlinedTextField(
-                        value = timeFormatter.format(Date(tripStartDate)),
-                        onValueChange = { },
-                        label = { Text("Start Time") },
-                        modifier = Modifier.weight(1f),
-                        readOnly = true,
-                        trailingIcon = {
-                            IconButton(onClick = { showStartTimePicker = true }) {
-                                Icon(Icons.Default.Edit, contentDescription = "Select Time")
-                            }
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = timeFormatter.format(Date(tripStartDate)),
+                    onValueChange = { },
+                    label = { Text("Start Time") },
+                    modifier = Modifier.fillMaxWidth(),
+                    readOnly = true,
+                    trailingIcon = {
+                        IconButton(onClick = { showStartTimePicker = true }) {
+                            Icon(Icons.Default.Edit, contentDescription = "Select Time")
                         }
-                    )
-                }
+                    }
+                )
 
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -321,46 +318,43 @@ fun EditReceiptScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                Row(
+                OutlinedTextField(
+                    value = tripEndDate?.let { dateFormatter.format(Date(it)) } ?: "",
+                    onValueChange = { },
+                    label = { Text("End Date") },
                     modifier = Modifier.fillMaxWidth(),
-                    horizontalArrangement = Arrangement.spacedBy(8.dp)
-                ) {
-                    OutlinedTextField(
-                        value = tripEndDate?.let { dateFormatter.format(Date(it)) } ?: "",
-                        onValueChange = { },
-                        label = { Text("End Date") },
-                        modifier = Modifier.weight(1f),
-                        readOnly = true,
-                        trailingIcon = {
-                            Row {
-                                if (tripEndDate != null) {
-                                    IconButton(onClick = { tripEndDate = null }) {
-                                        Icon(Icons.Default.Clear, contentDescription = "Clear Date")
-                                    }
-                                }
-                                IconButton(onClick = { showEndDatePicker = true }) {
-                                    Icon(Icons.Default.DateRange, contentDescription = "Select Date")
+                    readOnly = true,
+                    trailingIcon = {
+                        Row {
+                            if (tripEndDate != null) {
+                                IconButton(onClick = { tripEndDate = null }) {
+                                    Icon(Icons.Default.Clear, contentDescription = "Clear Date")
                                 }
                             }
+                            IconButton(onClick = { showEndDatePicker = true }) {
+                                Icon(Icons.Default.DateRange, contentDescription = "Select Date")
+                            }
                         }
-                    )
+                    }
+                )
 
-                    OutlinedTextField(
-                        value = tripEndDate?.let { timeFormatter.format(Date(it)) } ?: "",
-                        onValueChange = { },
-                        label = { Text("End Time") },
-                        modifier = Modifier.weight(1f),
-                        readOnly = true,
-                        trailingIcon = {
-                            IconButton(
-                                onClick = { showEndTimePicker = true },
-                                enabled = tripEndDate != null
-                            ) {
-                                Icon(Icons.Default.Edit, contentDescription = "Select Time")
-                            }
+                Spacer(modifier = Modifier.height(8.dp))
+
+                OutlinedTextField(
+                    value = tripEndDate?.let { timeFormatter.format(Date(it)) } ?: "",
+                    onValueChange = { },
+                    label = { Text("End Time") },
+                    modifier = Modifier.fillMaxWidth(),
+                    readOnly = true,
+                    trailingIcon = {
+                        IconButton(
+                            onClick = { showEndTimePicker = true },
+                            enabled = tripEndDate != null
+                        ) {
+                            Icon(Icons.Default.Edit, contentDescription = "Select Time")
                         }
-                    )
-                }
+                    }
+                )
             }
         }
 
