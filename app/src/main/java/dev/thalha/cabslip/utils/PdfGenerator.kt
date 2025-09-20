@@ -7,6 +7,7 @@ import com.itextpdf.layout.Document
 import com.itextpdf.layout.element.*
 import com.itextpdf.layout.properties.TextAlignment
 import com.itextpdf.layout.properties.UnitValue
+import com.itextpdf.layout.borders.Border
 import com.itextpdf.io.image.ImageDataFactory
 import dev.thalha.cabslip.data.entity.CabInfo
 import dev.thalha.cabslip.data.entity.Receipt
@@ -61,6 +62,7 @@ object PdfGenerator {
 
         // Left cell - Logo
         val logoCell = Cell()
+            .setBorder(Border.NO_BORDER)
         if (!cabInfo.logoPath.isNullOrBlank()) {
             try {
                 val logoFile = File(cabInfo.logoPath)
@@ -85,6 +87,7 @@ object PdfGenerator {
 
         // Right cell - Cab information
         val infoCell = Cell()
+            .setBorder(Border.NO_BORDER)
 
         // Cab name as title
         val title = Paragraph(cabInfo.cabName)
