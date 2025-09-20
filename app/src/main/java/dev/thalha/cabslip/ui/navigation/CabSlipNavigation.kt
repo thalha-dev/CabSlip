@@ -74,74 +74,100 @@ private fun MainAppNavigation() {
 
     Scaffold(
         bottomBar = {
-            NavigationBar {
+            NavigationBar(
+                modifier = Modifier.fillMaxWidth()
+            ) {
                 val navBackStackEntry by navController.currentBackStackEntryAsState()
                 val currentDestination = navBackStackEntry?.destination
+                val currentRoute = currentDestination?.route
 
                 // Home tab
                 NavigationBarItem(
-                    icon = { Icon(Icons.Default.Home, contentDescription = "Home") },
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Default.Home,
+                            contentDescription = "Home",
+                            modifier = Modifier.size(24.dp)
+                        )
+                    },
                     label = { Text("Home") },
-                    selected = currentDestination?.hierarchy?.any { it.route == Screen.Home.route } == true,
+                    selected = currentRoute == Screen.Home.route,
                     onClick = {
                         navController.navigate(Screen.Home.route) {
-                            popUpTo(navController.graph.findStartDestination().id) {
-                                saveState = true
-                            }
+                            popUpTo(Screen.Home.route) { inclusive = true }
                             launchSingleTop = true
-                            restoreState = true
                         }
-                    }
+                    },
+                    modifier = Modifier.weight(1f)
+                )
+
+                // Create Receipt button - Simple navigation, no complex state management
+                NavigationBarItem(
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Default.Add,
+                            contentDescription = "Create Receipt",
+                            modifier = Modifier.size(24.dp)
+                        )
+                    },
+                    label = { Text("Create") },
+                    selected = currentRoute == Screen.CreateReceipt.route,
+                    onClick = {
+                        navController.navigate(Screen.CreateReceipt.route) {
+                            launchSingleTop = true
+                        }
+                    },
+                    modifier = Modifier.weight(1f)
                 )
 
                 // Receipts tab
                 NavigationBarItem(
-                    icon = { Icon(Icons.Default.List, contentDescription = "Receipts") },
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Default.List,
+                            contentDescription = "Receipts",
+                            modifier = Modifier.size(24.dp)
+                        )
+                    },
                     label = { Text("Receipts") },
-                    selected = currentDestination?.hierarchy?.any { it.route == Screen.Receipts.route } == true,
+                    selected = currentRoute == Screen.Receipts.route,
                     onClick = {
                         navController.navigate(Screen.Receipts.route) {
-                            popUpTo(navController.graph.findStartDestination().id) {
-                                saveState = true
-                            }
+                            popUpTo(Screen.Receipts.route) { inclusive = true }
                             launchSingleTop = true
-                            restoreState = true
                         }
-                    }
+                    },
+                    modifier = Modifier.weight(1f)
                 )
 
                 // Cab Info tab
                 NavigationBarItem(
-                    icon = { Icon(Icons.Default.Info, contentDescription = "Cab Info") },
+                    icon = {
+                        Icon(
+                            imageVector = Icons.Default.Info,
+                            contentDescription = "Cab Info",
+                            modifier = Modifier.size(24.dp)
+                        )
+                    },
                     label = { Text("Cab Info") },
-                    selected = currentDestination?.hierarchy?.any { it.route == Screen.CabInfo.route } == true,
+                    selected = currentRoute == Screen.CabInfo.route,
                     onClick = {
                         navController.navigate(Screen.CabInfo.route) {
-                            popUpTo(navController.graph.findStartDestination().id) {
-                                saveState = true
-                            }
+                            popUpTo(Screen.CabInfo.route) { inclusive = true }
                             launchSingleTop = true
-                            restoreState = true
                         }
-                    }
+                    },
+                    modifier = Modifier.weight(1f)
                 )
-            }
-        },
-        floatingActionButton = {
-            FloatingActionButton(
-                onClick = {
-                    navController.navigate(Screen.CreateReceipt.route)
-                },
-                modifier = Modifier.padding(16.dp)
-            ) {
-                Icon(Icons.Default.Add, contentDescription = "Create Receipt")
             }
         }
     ) { innerPadding ->
         NavHost(
             navController = navController,
             startDestination = Screen.Home.route,
-            modifier = Modifier.padding(innerPadding)
+            modifier = Modifier
+                .fillMaxSize()
+                .padding(innerPadding)
         ) {
             composable(Screen.Home.route) {
                 HomeScreen(
@@ -163,7 +189,11 @@ private fun MainAppNavigation() {
             composable(Screen.CreateReceipt.route) {
                 CreateReceiptScreen(
                     onReceiptSaved = {
-                        navController.popBackStack()
+                        // Navigate back to home after saving with clean navigation
+                        navController.navigate(Screen.Home.route) {
+                            popUpTo(Screen.Home.route) { inclusive = true }
+                            launchSingleTop = true
+                        }
                     }
                 )
             }
