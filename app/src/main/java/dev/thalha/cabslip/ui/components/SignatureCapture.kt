@@ -7,16 +7,35 @@ import androidx.compose.foundation.Canvas
 import androidx.compose.foundation.background
 import androidx.compose.foundation.border
 import androidx.compose.foundation.gestures.detectDragGestures
-import androidx.compose.foundation.layout.*
+import androidx.compose.foundation.layout.Box
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material3.*
-import androidx.compose.runtime.*
+import androidx.compose.material3.Card
+import androidx.compose.material3.CardDefaults
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.OutlinedButton
+import androidx.compose.material3.Text
+import androidx.compose.runtime.Composable
+import androidx.compose.runtime.LaunchedEffect
+import androidx.compose.runtime.getValue
+import androidx.compose.runtime.mutableStateOf
+import androidx.compose.runtime.remember
+import androidx.compose.runtime.setValue
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.draw.clip
 import androidx.compose.ui.geometry.Offset
-import androidx.compose.ui.graphics.*
-import androidx.compose.ui.graphics.drawscope.DrawScope
+import androidx.compose.ui.graphics.Color
+import androidx.compose.ui.graphics.Path
+import androidx.compose.ui.graphics.StrokeCap
+import androidx.compose.ui.graphics.StrokeJoin
+import androidx.compose.ui.graphics.asAndroidPath
+import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.graphics.drawscope.Stroke
 import androidx.compose.ui.input.pointer.pointerInput
 import androidx.compose.ui.platform.LocalContext
@@ -113,7 +132,10 @@ fun SignatureCapture(
                         .pointerInput(true) {
                             detectDragGestures(
                                 onDragStart = { offset ->
-                                    Log.d("SignatureCapture", "onDragStart - user drawing NEW signature")
+                                    Log.d(
+                                        "SignatureCapture",
+                                        "onDragStart - user drawing NEW signature"
+                                    )
                                     // Clear existing signature when starting to draw new one
                                     existingSignatureBitmap = null
                                     hasExistingSignature = false
@@ -149,8 +171,14 @@ fun SignatureCapture(
 
                         drawImage(
                             image = bitmap.asImageBitmap(),
-                            dstOffset = androidx.compose.ui.unit.IntOffset(offsetX.toInt(), offsetY.toInt()),
-                            dstSize = androidx.compose.ui.unit.IntSize(scaledWidth.toInt(), scaledHeight.toInt())
+                            dstOffset = androidx.compose.ui.unit.IntOffset(
+                                offsetX.toInt(),
+                                offsetY.toInt()
+                            ),
+                            dstSize = androidx.compose.ui.unit.IntSize(
+                                scaledWidth.toInt(),
+                                scaledHeight.toInt()
+                            )
                         )
                     }
 
