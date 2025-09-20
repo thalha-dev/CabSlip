@@ -37,10 +37,9 @@ fun SignatureCapture(
     val scope = rememberCoroutineScope()
     val density = LocalDensity.current
 
-    var paths by remember { mutableStateOf(listOf<Path>()) }
-    var currentPath by remember { mutableStateOf(Path()) }
+    val path by remember { mutableStateOf(Path()) }
+    var currentPosition by remember { mutableStateOf(Offset.Unspecified) }
     var hasSignature by remember { mutableStateOf(false) }
-    var isDrawing by remember { mutableStateOf(false) }
     var existingSignatureBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
     // Load existing signature if available
@@ -54,7 +53,7 @@ fun SignatureCapture(
                         existingSignatureBitmap = bitmap
                         hasSignature = true
                     }
-                } catch (e: Exception) {
+                } catch (_: Exception) {
                     existingSignatureBitmap = null
                 }
             }
@@ -96,28 +95,21 @@ fun SignatureCapture(
                             MaterialTheme.colorScheme.outline.copy(alpha = 0.5f),
                             RoundedCornerShape(8.dp)
                         )
-                        .pointerInput(Unit) {
+                        .pointerInput(true) {
                             detectDragGestures(
                                 onDragStart = { offset ->
                                     // Clear existing signature when starting to draw new one
                                     existingSignatureBitmap = null
-                                    currentPath = Path().apply {
-                                        moveTo(offset.x, offset.y)
-                                    }
-                                    isDrawing = true
+                                    path.reset()
+                                    path.moveTo(offset.x, offset.y)
+                                    currentPosition = offset
+                                    hasSignature = true
                                 },
-                                onDragEnd = {
-                                    if (isDrawing) {
-                                        paths = paths + currentPath
-                                        hasSignature = true
-                                        isDrawing = false
-                                    }
+                                onDrag = { change, _ ->
+                                    path.lineTo(change.position.x, change.position.y)
+                                    currentPosition = change.position
                                 }
-                            ) { _, dragAmount ->
-                                if (isDrawing) {
-                                    currentPath.relativeLineTo(dragAmount.x, dragAmount.y)
-                                }
-                            }
+                            )
                         }
                 ) {
                     // Draw existing signature bitmap if available
@@ -144,26 +136,21 @@ fun SignatureCapture(
                         )
                     }
 
-                    // Draw completed paths (new signature being drawn)
-                    paths.forEach { path ->
+                    // Draw the signature path in real-time
+                    if (currentPosition != Offset.Unspecified && !path.isEmpty) {
                         drawPath(
                             path = path,
                             color = Color.Black,
-                            style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
-                        )
-                    }
-
-                    // Draw current path being drawn
-                    if (isDrawing) {
-                        drawPath(
-                            path = currentPath,
-                            color = Color.Black,
-                            style = Stroke(width = 3.dp.toPx(), cap = StrokeCap.Round)
+                            style = Stroke(
+                                width = 3.dp.toPx(),
+                                cap = StrokeCap.Round,
+                                join = StrokeJoin.Round
+                            )
                         )
                     }
                 }
 
-                if (!hasSignature && !isDrawing && existingSignatureBitmap == null) {
+                if (!hasSignature && currentPosition == Offset.Unspecified && existingSignatureBitmap == null) {
                     Box(
                         modifier = Modifier.fillMaxSize(),
                         contentAlignment = Alignment.Center
@@ -186,10 +173,9 @@ fun SignatureCapture(
         ) {
             OutlinedButton(
                 onClick = {
-                    paths = emptyList()
-                    currentPath = Path()
+                    path.reset()
+                    currentPosition = Offset.Unspecified
                     hasSignature = false
-                    isDrawing = false
                     existingSignatureBitmap = null
                     onSignatureSaved(null)
                 },
@@ -203,15 +189,15 @@ fun SignatureCapture(
                     if (hasSignature) {
                         scope.launch {
                             try {
-                                val signaturePath = if (paths.isNotEmpty()) {
+                                val signaturePath = if (!path.isEmpty) {
                                     // Save new drawn signature
-                                    saveSignatureToPng(context, paths, density)
+                                    saveSignatureToPng(context, path, density)
                                 } else {
                                     // Keep existing signature
                                     existingSignaturePath
                                 }
                                 onSignatureSaved(signaturePath)
-                            } catch (e: Exception) {
+                            } catch (_: Exception) {
                                 onSignatureSaved(null)
                             }
                         }
@@ -228,9 +214,9 @@ fun SignatureCapture(
     }
 }
 
-private suspend fun saveSignatureToPng(
+private fun saveSignatureToPng(
     context: android.content.Context,
-    paths: List<Path>,
+    path: Path,
     density: androidx.compose.ui.unit.Density
 ): String? {
     return try {
@@ -243,19 +229,18 @@ private suspend fun saveSignatureToPng(
         // Fill with white background
         canvas.drawColor(android.graphics.Color.WHITE)
 
-        val paint = android.graphics.Paint().apply {
+        val paint = Paint().apply {
             color = android.graphics.Color.BLACK
             strokeWidth = with(density) { 3.dp.toPx() }
-            style = android.graphics.Paint.Style.STROKE
-            strokeCap = android.graphics.Paint.Cap.ROUND
+            style = Paint.Style.STROKE
+            strokeCap = Paint.Cap.ROUND
+            strokeJoin = Paint.Join.ROUND
             isAntiAlias = true
         }
 
-        // Convert Compose paths to Android paths and draw
-        paths.forEach { composePath ->
-            val androidPath = composePath.asAndroidPath()
-            canvas.drawPath(androidPath, paint)
-        }
+        // Convert Compose path to Android path and draw
+        val androidPath = path.asAndroidPath()
+        canvas.drawPath(androidPath, paint)
 
         // Save to internal storage
         val signatureDir = File(context.filesDir, "signatures")
@@ -271,7 +256,7 @@ private suspend fun saveSignatureToPng(
         }
 
         signatureFile.absolutePath
-    } catch (e: Exception) {
+    } catch (_: Exception) {
         null
     }
 }
