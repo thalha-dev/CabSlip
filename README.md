@@ -212,7 +212,7 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 
 ## 👤 Author
 
-**Thalha** - [@thalha](https://github.com/thalha)
+**Thalha** - [@thalha](https://github.com/thalha-dev)
 
 ## 🙏 Acknowledgments
 
