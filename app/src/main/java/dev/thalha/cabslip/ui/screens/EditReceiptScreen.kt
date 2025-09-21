@@ -10,6 +10,7 @@ import androidx.compose.material.icons.filled.Share
 import androidx.compose.material.icons.filled.DateRange
 import androidx.compose.material.icons.filled.Edit
 import androidx.compose.material.icons.filled.Clear
+import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
@@ -46,6 +47,8 @@ fun EditReceiptScreen(
     var receipt by remember { mutableStateOf<Receipt?>(null) }
     var isLoading by remember { mutableStateOf(true) }
     var isSaving by remember { mutableStateOf(false) }
+    var isDeleting by remember { mutableStateOf(false) }
+    var showDeleteDialog by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
 
     // Form state
@@ -681,9 +684,61 @@ fun EditReceiptScreen(
                     Text("Update Receipt")
                 }
             }
+
+            // Delete Button
+            Button(
+                onClick = { showDeleteDialog = true },
+                colors = ButtonDefaults.buttonColors(
+                    containerColor = MaterialTheme.colorScheme.error
+                ),
+                modifier = Modifier.weight(1f)
+            ) {
+                if (isDeleting) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(20.dp),
+                        strokeWidth = 2.dp
+                    )
+                } else {
+                    Text("Delete Receipt")
+                }
+            }
         }
 
         Spacer(modifier = Modifier.height(16.dp))
+
+        // Delete Confirmation Dialog
+        if (showDeleteDialog) {
+            AlertDialog(
+                onDismissRequest = { showDeleteDialog = false },
+                title = { Text("Confirm Deletion") },
+                text = { Text("Are you sure you want to delete this receipt? This action cannot be undone.") },
+                confirmButton = {
+                    TextButton(
+                        onClick = {
+                            isDeleting = true
+                            scope.launch {
+                                try {
+                                    repository.deleteReceipt(receipt!!)
+                                    onReceiptUpdated() // Notify that receipt list needs to be refreshed
+                                } catch (e: Exception) {
+                                    errorMessage = "Failed to delete receipt. Please try again."
+                                } finally {
+                                    isDeleting = false
+                                    showDeleteDialog = false
+                                }
+                            }
+                        }
+                    ) {
+                        Text("Delete")
+                    }
+                },
+                dismissButton = {
+                    TextButton(onClick = { showDeleteDialog = false }) {
+                        Text("Cancel")
+                    }
+                }
+            )
+        }
 
         // Date Picker Dialogs
         if (showStartDatePicker) {
