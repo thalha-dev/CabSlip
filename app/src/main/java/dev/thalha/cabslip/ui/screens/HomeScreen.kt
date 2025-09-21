@@ -117,7 +117,7 @@ fun HomeScreen(
 
                         // Total Kilometers
                         StatCard(
-                            iconRes = R.drawable.outline_home_24, // Using home as placeholder for distance
+                            iconRes = R.drawable.outline_mode_of_travel_24, // Changed from outline_home_24 to proper travel icon
                             value = "${String.format("%.1f", statsSummary.totalKilometers)} km",
                             label = "Distance",
                             modifier = Modifier.weight(1f)

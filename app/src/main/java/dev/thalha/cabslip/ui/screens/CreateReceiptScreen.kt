@@ -603,7 +603,7 @@ fun CreateReceiptScreen(
                     },
                     modifier = Modifier.weight(1f)
                 ) {
-                    Icon(painterResource(id = R.drawable.baseline_attach_money_24), contentDescription = null)
+                    Icon(painterResource(id = R.drawable.baseline_share_24), contentDescription = null) // Changed from baseline_attach_money_24 to proper share icon
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Share PDF")
                 }

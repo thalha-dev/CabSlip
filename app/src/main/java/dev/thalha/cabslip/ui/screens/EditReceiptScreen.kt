@@ -224,7 +224,7 @@ fun EditReceiptScreen(
                     }
                 }
             ) {
-                Icon(painterResource(id = R.drawable.baseline_attach_money_24), contentDescription = "Share PDF")
+                Icon(painterResource(id = R.drawable.baseline_share_24), contentDescription = "Share PDF") // Changed from baseline_attach_money_24 to proper share icon
             }
         }
 
