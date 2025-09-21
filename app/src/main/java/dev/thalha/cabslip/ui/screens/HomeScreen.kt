@@ -273,14 +273,9 @@ fun ReceiptCard(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Icon(
-                        painter = painterResource(
-                            id = if (receipt.ownerSignaturePath != null)
-                                R.drawable.outline_receipt_24 else R.drawable.baseline_warning_24
-                        ),
-                        contentDescription = if (receipt.ownerSignaturePath != null)
-                            "Signed" else "No signature",
-                        tint = if (receipt.ownerSignaturePath != null)
-                            MaterialTheme.colorScheme.primary else MaterialTheme.colorScheme.error,
+                        painter = painterResource(id = R.drawable.outline_receipt_24),
+                        contentDescription = "Receipt",
+                        tint = MaterialTheme.colorScheme.primary,
                         modifier = Modifier.size(16.dp)
                     )
                 }

@@ -8,9 +8,7 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -20,8 +18,6 @@ import dev.thalha.cabslip.R
 import dev.thalha.cabslip.data.database.CabSlipDatabase
 import dev.thalha.cabslip.data.entity.Receipt
 import dev.thalha.cabslip.data.repository.CabSlipRepository
-import dev.thalha.cabslip.ui.components.SignatureCapture
-import dev.thalha.cabslip.ui.components.saveSignatureFromPath
 import dev.thalha.cabslip.utils.PdfGenerator
 import dev.thalha.cabslip.utils.ShareUtils
 import kotlinx.coroutines.launch
@@ -34,7 +30,6 @@ fun EditReceiptScreen(
     onReceiptUpdated: () -> Unit
 ) {
     val context = LocalContext.current
-    val density = LocalDensity.current
     val scope = rememberCoroutineScope()
 
     val database = CabSlipDatabase.getDatabase(context)
@@ -61,12 +56,6 @@ fun EditReceiptScreen(
     var driverName by remember { mutableStateOf("") }
     var driverMobile by remember { mutableStateOf("") }
     var vehicleNumber by remember { mutableStateOf("") }
-    var ownerSignaturePath by remember { mutableStateOf<String?>(null) }
-
-    // Signature state
-    var signaturePath by remember { mutableStateOf<Path?>(null) }
-    var hasNewSignature by remember { mutableStateOf(false) }
-    var existingSignaturePath by remember { mutableStateOf<String?>(null) }
 
     // Date formatters
     val dateFormatter = remember { SimpleDateFormat("dd MMM yyyy", Locale.getDefault()) }
@@ -115,12 +104,6 @@ fun EditReceiptScreen(
                 driverName = loadedReceipt.driverName
                 driverMobile = loadedReceipt.driverMobile
                 vehicleNumber = loadedReceipt.vehicleNumber
-                ownerSignaturePath = loadedReceipt.ownerSignaturePath
-
-                // Initialize signature state properly
-                existingSignaturePath = loadedReceipt.ownerSignaturePath
-                hasNewSignature = false
-                signaturePath = null
             } else {
                 errorMessage = "Receipt not found"
             }
@@ -472,29 +455,6 @@ fun EditReceiptScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Signature Capture Section - NEW PHASE 2 FEATURE
-        Card(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                SignatureCapture(
-                    existingSignaturePath = ownerSignaturePath,
-                    onSignatureChanged = { path, hasSignature, existingPath ->
-                        signaturePath = path
-                        hasNewSignature = hasSignature
-                        // Don't override existingSignaturePath if we get null (new signature drawn)
-                        if (existingPath != null) {
-                            existingSignaturePath = existingPath
-                        }
-                    }
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
         // Fare Summary
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -616,25 +576,6 @@ fun EditReceiptScreen(
 
                     scope.launch {
                         try {
-                            // Handle signature saving logic
-                            Log.d("EditReceiptScreen", "=== SIGNATURE DEBUG ===")
-                            Log.d("EditReceiptScreen", "hasNewSignature: $hasNewSignature")
-                            Log.d("EditReceiptScreen", "signaturePath isEmpty: ${signaturePath?.isEmpty}")
-                            Log.d("EditReceiptScreen", "existingSignaturePath: $existingSignaturePath")
-
-                            val finalSignaturePath = if (hasNewSignature && signaturePath != null) {
-                                Log.d("EditReceiptScreen", "Saving new signature...")
-                                val newPath = saveSignatureFromPath(context, signaturePath, density)
-                                Log.d("EditReceiptScreen", "New signature saved to: $newPath")
-                                newPath
-                            } else if (hasNewSignature && signaturePath == null) {
-                                Log.d("EditReceiptScreen", "hasNewSignature=true but no valid path - this is a bug in SignatureCapture, keeping existing")
-                                existingSignaturePath
-                            } else {
-                                Log.d("EditReceiptScreen", "Keeping existing signature: $existingSignaturePath")
-                                existingSignaturePath
-                            }
-
                             val currentTime = System.currentTimeMillis()
 
                             val updatedReceipt = receipt!!.copy(
@@ -651,7 +592,6 @@ fun EditReceiptScreen(
                                 driverName = driverName.trim(),
                                 driverMobile = driverMobile.trim(),
                                 vehicleNumber = vehicleNumber.trim(),
-                                ownerSignaturePath = finalSignaturePath,
                                 baseFare = calculatedTotals.first,
                                 waitingFee = calculatedTotals.second,
                                 totalFee = calculatedTotals.third,

@@ -6,7 +6,9 @@ import androidx.compose.foundation.verticalScroll
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -14,12 +16,15 @@ import dev.thalha.cabslip.data.database.CabSlipDatabase
 import dev.thalha.cabslip.data.entity.CabInfo
 import dev.thalha.cabslip.data.repository.CabSlipRepository
 import dev.thalha.cabslip.ui.components.LogoUpload
+import dev.thalha.cabslip.ui.components.SignatureCapture
+import dev.thalha.cabslip.ui.components.saveSignatureFromPath
 import kotlinx.coroutines.launch
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
 fun CabInfoScreen() {
     val context = LocalContext.current
+    val density = LocalDensity.current
     val scope = rememberCoroutineScope()
 
     val database = CabSlipDatabase.getDatabase(context)
@@ -33,9 +38,14 @@ fun CabInfoScreen() {
     var secondaryContact by remember { mutableStateOf("") }
     var email by remember { mutableStateOf("") }
     var logoPath by remember { mutableStateOf<String?>(null) }
+    var ownerSignaturePath by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(false) }
     var showSuccessMessage by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
+
+    // Signature handling
+    var signaturePath by remember { mutableStateOf<Path?>(null) }
+    var hasNewSignature by remember { mutableStateOf(false) }
 
     // Update form when cabInfo changes
     LaunchedEffect(cabInfo) {
@@ -46,6 +56,7 @@ fun CabInfoScreen() {
             secondaryContact = info.secondaryContact ?: ""
             email = info.email
             logoPath = info.logoPath
+            ownerSignaturePath = info.ownerSignaturePath
         }
     }
 
@@ -121,6 +132,21 @@ fun CabInfoScreen() {
             }
         )
 
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Signature Capture Section - NEW
+        SignatureCapture(
+            modifier = Modifier.fillMaxWidth(),
+            existingSignaturePath = ownerSignaturePath,
+            onSignatureChanged = { path, hasNew, existingPath ->
+                signaturePath = path
+                hasNewSignature = hasNew
+                if (!hasNew && existingPath != null) {
+                    ownerSignaturePath = existingPath
+                }
+            }
+        )
+
         if (errorMessage.isNotEmpty()) {
             Spacer(modifier = Modifier.height(8.dp))
             Text(
@@ -164,6 +190,11 @@ fun CabInfoScreen() {
                             secondaryContact = if (secondaryContact.isBlank()) null else secondaryContact.trim(),
                             email = email.trim(),
                             logoPath = logoPath,
+                            ownerSignaturePath = if (hasNewSignature && signaturePath != null) {
+                                saveSignatureFromPath(context, signaturePath, density)
+                            } else {
+                                ownerSignaturePath
+                            },
                             createdAt = cabInfo?.createdAt ?: currentTime,
                             updatedAt = currentTime
                         )

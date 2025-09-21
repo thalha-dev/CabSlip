@@ -2,7 +2,9 @@ package dev.thalha.cabslip.data.entity
 
 import androidx.room.Entity
 import androidx.room.PrimaryKey
+import kotlinx.serialization.Serializable
 
+@Serializable
 @Entity(tableName = "receipts")
 data class Receipt(
     @PrimaryKey
@@ -20,7 +22,6 @@ data class Receipt(
     val driverName: String,
     val driverMobile: String,
     val vehicleNumber: String,
-    val ownerSignaturePath: String?,
     val baseFare: Double, // Calculated: pricePerKm * totalKm
     val waitingFee: Double, // Calculated: waitingChargePerHr * waitingHrs
     val totalFee: Double, // Calculated: baseFare + tollParking + bata + waitingFee

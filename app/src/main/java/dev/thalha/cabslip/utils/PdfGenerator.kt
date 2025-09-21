@@ -44,7 +44,7 @@ object PdfGenerator {
             addReceiptDetails(document, receipt)
             addTripDetails(document, receipt)
             addFareBreakdown(document, receipt)
-            addSignature(document, receipt.ownerSignaturePath)
+            addSignature(document, cabInfo.ownerSignaturePath) // Get signature from cabInfo instead of receipt
             addFooter(document)
 
             document.close()

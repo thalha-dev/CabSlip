@@ -8,9 +8,7 @@ import androidx.compose.foundation.shape.RoundedCornerShape
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
-import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.platform.LocalContext
-import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
@@ -21,8 +19,6 @@ import dev.thalha.cabslip.R
 import dev.thalha.cabslip.data.database.CabSlipDatabase
 import dev.thalha.cabslip.data.entity.Receipt
 import dev.thalha.cabslip.data.repository.CabSlipRepository
-import dev.thalha.cabslip.ui.components.SignatureCapture
-import dev.thalha.cabslip.ui.components.saveSignatureFromPath
 import dev.thalha.cabslip.utils.PdfGenerator
 import dev.thalha.cabslip.utils.ShareUtils
 import kotlinx.coroutines.launch
@@ -34,7 +30,6 @@ fun CreateReceiptScreen(
     onReceiptSaved: () -> Unit
 ) {
     val context = LocalContext.current
-    val density = LocalDensity.current
     val scope = rememberCoroutineScope()
 
     val database = CabSlipDatabase.getDatabase(context)
@@ -54,12 +49,6 @@ fun CreateReceiptScreen(
     var driverName by remember { mutableStateOf("") }
     var driverMobile by remember { mutableStateOf("") }
     var vehicleNumber by remember { mutableStateOf("") }
-    var ownerSignaturePath by remember { mutableStateOf<String?>(null) }
-
-    // Signature state
-    var signaturePath by remember { mutableStateOf<Path?>(null) }
-    var hasNewSignature by remember { mutableStateOf(false) }
-    var existingSignaturePath by remember { mutableStateOf<String?>(null) }
 
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
@@ -392,25 +381,6 @@ fun CreateReceiptScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Signature Capture Section - NEW PHASE 2 FEATURE
-        Card(
-            modifier = Modifier.fillMaxWidth()
-        ) {
-            Column(
-                modifier = Modifier.padding(16.dp)
-            ) {
-                SignatureCapture(
-                    onSignatureChanged = { path, hasSignature, existingPath ->
-                        signaturePath = path
-                        hasNewSignature = hasSignature
-                        existingSignaturePath = existingPath
-                    }
-                )
-            }
-        }
-
-        Spacer(modifier = Modifier.height(16.dp))
-
         // Fare Summary
         Card(
             modifier = Modifier.fillMaxWidth(),
@@ -523,13 +493,6 @@ fun CreateReceiptScreen(
 
                     scope.launch {
                         try {
-                            // Save signature first if there's a new one drawn
-                            val finalSignaturePath = if (hasNewSignature && signaturePath != null) {
-                                saveSignatureFromPath(context, signaturePath, density)
-                            } else {
-                                existingSignaturePath // Keep existing signature if no new one
-                            }
-
                             val receiptId = repository.generateUniqueReceiptId()
                             val currentTime = System.currentTimeMillis()
 
@@ -548,7 +511,6 @@ fun CreateReceiptScreen(
                                 driverName = driverName.trim(),
                                 driverMobile = driverMobile.trim(),
                                 vehicleNumber = vehicleNumber.trim(),
-                                ownerSignaturePath = finalSignaturePath,
                                 baseFare = calculatedTotals.first,
                                 waitingFee = calculatedTotals.second,
                                 totalFee = calculatedTotals.third,

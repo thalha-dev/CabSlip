@@ -88,4 +88,11 @@ class CabSlipRepository(
         val totalFee = baseFare + tollParking + bata + waitingFee
         return Triple(baseFare, waitingFee, totalFee)
     }
+
+    // Backup and restore methods
+    suspend fun getAllReceiptsSync(): List<Receipt> = receiptDao.getAllReceiptsSync()
+
+    suspend fun deleteAllReceipts() {
+        receiptDao.deleteAllReceipts()
+    }
 }

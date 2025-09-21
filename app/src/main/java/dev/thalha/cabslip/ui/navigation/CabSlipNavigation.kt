@@ -34,6 +34,7 @@ import dev.thalha.cabslip.ui.screens.EditReceiptScreen
 import dev.thalha.cabslip.ui.screens.FirstTimeSetupScreen
 import dev.thalha.cabslip.ui.screens.HomeScreen
 import dev.thalha.cabslip.ui.screens.ReceiptsScreen
+import dev.thalha.cabslip.ui.screens.SettingsScreen
 
 // Update Screen object to use drawable resources instead of library icons
 sealed class Screen(val route: String, val title: String, val iconRes: Int) {
@@ -41,6 +42,7 @@ sealed class Screen(val route: String, val title: String, val iconRes: Int) {
     object CreateReceipt : Screen("create_receipt", "Create Receipt", dev.thalha.cabslip.R.drawable.outline_add_24)
     object Receipts : Screen("receipts", "Receipts", dev.thalha.cabslip.R.drawable.outline_receipt_24)
     object CabInfo : Screen("cab_info", "Cab Info", dev.thalha.cabslip.R.drawable.outline_info_24)
+    object Settings : Screen("settings", "Settings", dev.thalha.cabslip.R.drawable.baseline_settings_24)
     object EditReceipt : Screen("edit_receipt/{receiptId}", "Edit Receipt", dev.thalha.cabslip.R.drawable.outline_receipt_24) {
         fun createRoute(receiptId: String) = "edit_receipt/$receiptId"
     }
@@ -179,6 +181,26 @@ private fun MainAppNavigation() {
                     },
                     modifier = Modifier.weight(1f)
                 )
+
+                // Settings tab
+                NavigationBarItem(
+                    icon = {
+                        Icon(
+                            painter = painterResource(id = dev.thalha.cabslip.R.drawable.baseline_settings_24),
+                            contentDescription = "Settings",
+                            modifier = Modifier.size(24.dp)
+                        )
+                    },
+                    label = { Text("Settings") },
+                    selected = currentRoute == Screen.Settings.route,
+                    onClick = {
+                        navController.navigate(Screen.Settings.route) {
+                            popUpTo(Screen.Settings.route) { inclusive = true }
+                            launchSingleTop = true
+                        }
+                    },
+                    modifier = Modifier.weight(1f)
+                )
             }
         }
     ) { innerPadding ->
@@ -205,6 +227,9 @@ private fun MainAppNavigation() {
             }
             composable(Screen.CabInfo.route) {
                 CabInfoScreen()
+            }
+            composable(Screen.Settings.route) {
+                SettingsScreen()
             }
             composable(Screen.CreateReceipt.route) {
                 CreateReceiptScreen(

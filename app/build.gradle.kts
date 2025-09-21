@@ -3,6 +3,7 @@ plugins {
     alias(libs.plugins.kotlin.android)
     alias(libs.plugins.kotlin.compose)
     alias(libs.plugins.ksp)
+    kotlin("plugin.serialization") version "1.9.22"
 }
 
 android {
@@ -74,6 +75,9 @@ dependencies {
 
     // PDF Generation
     implementation(libs.itext.core)
+
+    // Kotlin Serialization for backup/restore
+    implementation("org.jetbrains.kotlinx:kotlinx-serialization-json:1.6.3")
 
     testImplementation(libs.junit)
     androidTestImplementation(libs.androidx.junit)

@@ -86,4 +86,11 @@ interface ReceiptDao {
 
     @Query("SELECT COUNT(*) FROM receipts WHERE receiptId = :receiptId")
     suspend fun checkReceiptIdExists(receiptId: String): Int
+
+    // Backup and restore methods
+    @Query("SELECT * FROM receipts ORDER BY tripStartDate DESC")
+    suspend fun getAllReceiptsSync(): List<Receipt>
+
+    @Query("DELETE FROM receipts")
+    suspend fun deleteAllReceipts()
 }
