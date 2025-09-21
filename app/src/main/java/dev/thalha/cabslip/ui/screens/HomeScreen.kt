@@ -118,7 +118,7 @@ fun HomeScreen(
                         // Total Kilometers
                         StatCard(
                             iconRes = R.drawable.outline_mode_of_travel_24, // Changed from outline_home_24 to proper travel icon
-                            value = "${String.format("%.1f", statsSummary.totalKilometers)} km",
+                            value = "${String.format(Locale.getDefault(), "%.1f", statsSummary.totalKilometers)} km",
                             label = "Distance",
                             modifier = Modifier.weight(1f)
                         )
@@ -126,7 +126,7 @@ fun HomeScreen(
                         // Total Revenue
                         StatCard(
                             iconRes = R.drawable.baseline_attach_money_24,
-                            value = "₹${String.format("%.0f", statsSummary.totalRevenue)}",
+                            value = "₹${String.format(Locale.getDefault(), "%.0f", statsSummary.totalRevenue)}",
                             label = "Revenue",
                             modifier = Modifier.weight(1f)
                         )
@@ -267,7 +267,7 @@ fun ReceiptCard(
                     horizontalAlignment = Alignment.End
                 ) {
                     Text(
-                        text = "₹${String.format("%.2f", receipt.totalFee)}",
+                        text = "₹${String.format(Locale.getDefault(), "%.2f", receipt.totalFee)}",
                         fontSize = 16.sp,
                         fontWeight = FontWeight.Bold,
                         color = MaterialTheme.colorScheme.primary

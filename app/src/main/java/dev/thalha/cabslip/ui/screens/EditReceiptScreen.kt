@@ -516,7 +516,7 @@ fun EditReceiptScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text("Base Fare:")
-                    Text("₹${String.format("%.2f", calculatedTotals.first)}")
+                    Text("₹${String.format(Locale.getDefault(), "%.2f", calculatedTotals.first)}")
                 }
 
                 Row(
@@ -524,7 +524,7 @@ fun EditReceiptScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text("Waiting Fee:")
-                    Text("₹${String.format("%.2f", calculatedTotals.second)}")
+                    Text("₹${String.format(Locale.getDefault(), "%.2f", calculatedTotals.second)}")
                 }
 
                 Row(
@@ -532,7 +532,7 @@ fun EditReceiptScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text("Toll & Parking:")
-                    Text("₹${String.format("%.2f", tollParking.toDoubleOrNull() ?: 0.0)}")
+                    Text("₹${String.format(Locale.getDefault(), "%.2f", tollParking.toDoubleOrNull() ?: 0.0)}")
                 }
 
                 Row(
@@ -540,7 +540,7 @@ fun EditReceiptScreen(
                     horizontalArrangement = Arrangement.SpaceBetween
                 ) {
                     Text("Bata:")
-                    Text("₹${String.format("%.2f", bata.toDoubleOrNull() ?: 0.0)}")
+                    Text("₹${String.format(Locale.getDefault(), "%.2f", bata.toDoubleOrNull() ?: 0.0)}")
                 }
 
                 HorizontalDivider(modifier = Modifier.padding(vertical = 8.dp))
@@ -555,7 +555,7 @@ fun EditReceiptScreen(
                         fontSize = 16.sp
                     )
                     Text(
-                        text = "₹${String.format("%.2f", calculatedTotals.third)}",
+                        text = "₹${String.format(Locale.getDefault(), "%.2f", calculatedTotals.third)}",
                         fontWeight = FontWeight.Bold,
                         fontSize = 16.sp,
                         color = MaterialTheme.colorScheme.primary
