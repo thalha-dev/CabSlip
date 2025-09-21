@@ -31,6 +31,43 @@ interface ReceiptDao {
     """)
     fun filterByDateRange(fromDate: Long, toDate: Long): Flow<List<Receipt>>
 
+    // Pagination methods
+    @Query("SELECT * FROM receipts ORDER BY tripStartDate DESC LIMIT :limit OFFSET :offset")
+    suspend fun getReceiptsPaginated(limit: Int, offset: Int): List<Receipt>
+
+    @Query("""
+        SELECT * FROM receipts 
+        WHERE driverName LIKE '%' || :query || '%' 
+        OR receiptId LIKE '%' || :query || '%' 
+        OR destination LIKE '%' || :query || '%'
+        ORDER BY tripStartDate DESC LIMIT :limit OFFSET :offset
+    """)
+    suspend fun searchReceiptsPaginated(query: String, limit: Int, offset: Int): List<Receipt>
+
+    @Query("""
+        SELECT * FROM receipts 
+        WHERE tripStartDate >= :fromDate AND tripStartDate <= :toDate
+        ORDER BY tripStartDate DESC LIMIT :limit OFFSET :offset
+    """)
+    suspend fun filterByDateRangePaginated(fromDate: Long, toDate: Long, limit: Int, offset: Int): List<Receipt>
+
+    @Query("SELECT COUNT(*) FROM receipts")
+    suspend fun getTotalReceiptsCount(): Int
+
+    @Query("""
+        SELECT COUNT(*) FROM receipts 
+        WHERE driverName LIKE '%' || :query || '%' 
+        OR receiptId LIKE '%' || :query || '%' 
+        OR destination LIKE '%' || :query || '%'
+    """)
+    suspend fun getSearchResultsCount(query: String): Int
+
+    @Query("""
+        SELECT COUNT(*) FROM receipts 
+        WHERE tripStartDate >= :fromDate AND tripStartDate <= :toDate
+    """)
+    suspend fun getDateRangeResultsCount(fromDate: Long, toDate: Long): Int
+
     @Insert
     suspend fun insertReceipt(receipt: Receipt)
 

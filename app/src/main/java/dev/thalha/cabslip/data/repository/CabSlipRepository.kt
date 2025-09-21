@@ -25,6 +25,23 @@ class CabSlipRepository(
 
     fun getRecentReceipts(limit: Int = 6): Flow<List<Receipt>> = receiptDao.getRecentReceipts(limit)
 
+    // Pagination methods
+    suspend fun getReceiptsPaginated(limit: Int, offset: Int): List<Receipt> =
+        receiptDao.getReceiptsPaginated(limit, offset)
+
+    suspend fun searchReceiptsPaginated(query: String, limit: Int, offset: Int): List<Receipt> =
+        receiptDao.searchReceiptsPaginated(query, limit, offset)
+
+    suspend fun filterByDateRangePaginated(fromDate: Long, toDate: Long, limit: Int, offset: Int): List<Receipt> =
+        receiptDao.filterByDateRangePaginated(fromDate, toDate, limit, offset)
+
+    suspend fun getTotalReceiptsCount(): Int = receiptDao.getTotalReceiptsCount()
+
+    suspend fun getSearchResultsCount(query: String): Int = receiptDao.getSearchResultsCount(query)
+
+    suspend fun getDateRangeResultsCount(fromDate: Long, toDate: Long): Int =
+        receiptDao.getDateRangeResultsCount(fromDate, toDate)
+
     suspend fun getReceiptById(id: String): Receipt? = receiptDao.getReceiptById(id)
 
     fun searchReceipts(query: String): Flow<List<Receipt>> = receiptDao.searchReceipts(query)

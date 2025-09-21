@@ -3,6 +3,7 @@ package dev.thalha.cabslip.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
+import androidx.compose.foundation.lazy.rememberLazyListState
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.Search
 import androidx.compose.material.icons.filled.DateRange
@@ -17,8 +18,18 @@ import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import dev.thalha.cabslip.data.database.CabSlipDatabase
 import dev.thalha.cabslip.data.repository.CabSlipRepository
+import dev.thalha.cabslip.data.entity.Receipt
 import java.text.SimpleDateFormat
 import java.util.*
+
+// Pagination state data class
+data class PaginationState(
+    val items: List<Receipt> = emptyList(),
+    val isLoading: Boolean = false,
+    val hasMoreItems: Boolean = true,
+    val currentPage: Int = 0,
+    val totalCount: Int = 0
+)
 
 @OptIn(ExperimentalMaterial3Api::class)
 @Composable
@@ -35,22 +46,50 @@ fun ReceiptsScreen(
     var selectedEndDate by remember { mutableStateOf<Long?>(null) }
     var isDateFilterActive by remember { mutableStateOf(false) }
 
+    var paginationState by remember { mutableStateOf(PaginationState()) }
+    val listState = rememberLazyListState()
+
     val dateFormatter = remember { SimpleDateFormat("MMM dd, yyyy", Locale.getDefault()) }
 
-    val receipts by if (isDateFilterActive && selectedStartDate != null) {
-        val startDate = selectedStartDate!!
-        val endDate = if (selectedEndDate != null) {
-            // When end date is selected, extend it to include the entire day
-            selectedEndDate!! + (24 * 60 * 60 * 1000) - 1
-        } else {
-            // When only start date is selected, extend it to include the entire day
-            startDate + (24 * 60 * 60 * 1000) - 1
-        }
-        repository.filterByDateRange(startDate, endDate).collectAsState(initial = emptyList())
-    } else if (searchQuery.isBlank()) {
-        repository.getAllReceipts().collectAsState(initial = emptyList())
-    } else {
-        repository.searchReceipts(searchQuery).collectAsState(initial = emptyList())
+    // Constants
+    val pageSize = 20
+
+    // Load initial data and handle filter changes
+    LaunchedEffect(searchQuery, isDateFilterActive, selectedStartDate, selectedEndDate) {
+        paginationState = paginationState.copy(isLoading = true)
+        paginationState = loadReceipts(
+            repository = repository,
+            searchQuery = searchQuery,
+            isDateFilterActive = isDateFilterActive,
+            selectedStartDate = selectedStartDate,
+            selectedEndDate = selectedEndDate,
+            pageSize = pageSize,
+            reset = true
+        )
+    }
+
+    // Infinite scroll detection
+    LaunchedEffect(listState) {
+        snapshotFlow { listState.layoutInfo.visibleItemsInfo.lastOrNull()?.index }
+            .collect { lastVisibleIndex ->
+                if (lastVisibleIndex != null &&
+                    lastVisibleIndex >= paginationState.items.size - 3 &&
+                    !paginationState.isLoading &&
+                    paginationState.hasMoreItems) {
+
+                    paginationState = paginationState.copy(isLoading = true)
+                    paginationState = loadReceipts(
+                        repository = repository,
+                        searchQuery = searchQuery,
+                        isDateFilterActive = isDateFilterActive,
+                        selectedStartDate = selectedStartDate,
+                        selectedEndDate = selectedEndDate,
+                        pageSize = pageSize,
+                        reset = false,
+                        currentState = paginationState
+                    )
+                }
+            }
     }
 
     Column(
@@ -189,7 +228,7 @@ fun ReceiptsScreen(
                             selectedEndDate != null ->
                                 "Showing receipts from ${dateFormatter.format(Date(selectedStartDate!!))} to ${dateFormatter.format(Date(selectedEndDate!!))}"
                             else ->
-                                "Showing receipts from ${dateFormatter.format(Date(selectedStartDate!!))} onwards"
+                                "Showing receipts on ${dateFormatter.format(Date(selectedStartDate!!))}"
                         },
                         fontSize = 12.sp,
                         color = MaterialTheme.colorScheme.primary,
@@ -199,10 +238,33 @@ fun ReceiptsScreen(
             }
         }
 
-        Spacer(modifier = Modifier.height(16.dp))
+        Spacer(modifier = Modifier.height(12.dp))
+
+        // Results count indicator
+        if (paginationState.items.isNotEmpty() || paginationState.isLoading) {
+            Row(
+                modifier = Modifier.fillMaxWidth(),
+                horizontalArrangement = Arrangement.SpaceBetween,
+                verticalAlignment = Alignment.CenterVertically
+            ) {
+                Text(
+                    text = "Showing ${paginationState.items.size} of ${paginationState.totalCount} receipts",
+                    fontSize = 12.sp,
+                    color = MaterialTheme.colorScheme.onSurfaceVariant
+                )
+
+                if (paginationState.isLoading) {
+                    CircularProgressIndicator(
+                        modifier = Modifier.size(16.dp),
+                        strokeWidth = 2.dp
+                    )
+                }
+            }
+            Spacer(modifier = Modifier.height(8.dp))
+        }
 
         // Results section
-        if (receipts.isEmpty()) {
+        if (paginationState.items.isEmpty() && !paginationState.isLoading) {
             Card(
                 modifier = Modifier.fillMaxWidth(),
                 colors = CardDefaults.cardColors(
@@ -237,13 +299,28 @@ fun ReceiptsScreen(
             }
         } else {
             LazyColumn(
+                state = listState,
                 verticalArrangement = Arrangement.spacedBy(8.dp)
             ) {
-                items(receipts) { receipt ->
+                items(paginationState.items) { receipt ->
                     ReceiptCard(
                         receipt = receipt,
                         onClick = { onReceiptClick(receipt.receiptId) }
                     )
+                }
+
+                // Loading indicator at the bottom
+                if (paginationState.isLoading && paginationState.items.isNotEmpty()) {
+                    item {
+                        Box(
+                            modifier = Modifier
+                                .fillMaxWidth()
+                                .padding(16.dp),
+                            contentAlignment = Alignment.Center
+                        ) {
+                            CircularProgressIndicator()
+                        }
+                    }
                 }
             }
         }
@@ -266,6 +343,60 @@ fun ReceiptsScreen(
             initialStartDate = selectedStartDate,
             initialEndDate = selectedEndDate
         )
+    }
+}
+
+// Helper function to load receipts with pagination
+private suspend fun loadReceipts(
+    repository: CabSlipRepository,
+    searchQuery: String,
+    isDateFilterActive: Boolean,
+    selectedStartDate: Long?,
+    selectedEndDate: Long?,
+    pageSize: Int,
+    reset: Boolean,
+    currentState: PaginationState = PaginationState()
+): PaginationState {
+    val offset = if (reset) 0 else currentState.items.size
+
+    return try {
+        val (newReceipts, totalCount) = when {
+            searchQuery.isNotBlank() -> {
+                val receipts = repository.searchReceiptsPaginated(searchQuery, pageSize, offset)
+                val count = repository.getSearchResultsCount(searchQuery)
+                receipts to count
+            }
+            isDateFilterActive && selectedStartDate != null -> {
+                val startDate = selectedStartDate
+                val endDate = if (selectedEndDate != null) {
+                    selectedEndDate + (24 * 60 * 60 * 1000) - 1
+                } else {
+                    startDate + (24 * 60 * 60 * 1000) - 1
+                }
+                val receipts = repository.filterByDateRangePaginated(startDate, endDate, pageSize, offset)
+                val count = repository.getDateRangeResultsCount(startDate, endDate)
+                receipts to count
+            }
+            else -> {
+                val receipts = repository.getReceiptsPaginated(pageSize, offset)
+                val count = repository.getTotalReceiptsCount()
+                receipts to count
+            }
+        }
+
+        val updatedItems = if (reset) newReceipts else currentState.items + newReceipts
+        val hasMoreItems = updatedItems.size < totalCount
+
+        PaginationState(
+            items = updatedItems,
+            isLoading = false,
+            hasMoreItems = hasMoreItems,
+            currentPage = if (reset) 1 else currentState.currentPage + 1,
+            totalCount = totalCount
+        )
+
+    } catch (_: Exception) {
+        currentState.copy(isLoading = false)
     }
 }
 
