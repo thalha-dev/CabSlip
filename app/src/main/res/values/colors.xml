@@ -7,4 +7,7 @@
     <color name="teal_700">#FF018786</color>
     <color name="black">#FF000000</color>
     <color name="white">#FFFFFFFF</color>
+
+    <!-- Launcher icon background color - light gray to match splash screen -->
+    <color name="ic_launcher_background">#F3F4F6</color>
 </resources>
