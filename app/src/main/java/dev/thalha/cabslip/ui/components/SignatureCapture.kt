@@ -61,6 +61,9 @@ fun SignatureCapture(
     var hasNewlyDrawnSignature by remember { mutableStateOf(false) }
     var existingSignatureBitmap by remember { mutableStateOf<Bitmap?>(null) }
 
+    // Capture the stroke color outside the Canvas context
+    val strokeColor = MaterialTheme.colorScheme.onSurface
+
     // Load existing signature if available
     LaunchedEffect(existingSignaturePath) {
         Log.d("SignatureCapture", "Loading existing signature: $existingSignaturePath")
@@ -186,7 +189,7 @@ fun SignatureCapture(
                     if (currentPosition != Offset.Unspecified && !path.isEmpty && hasNewlyDrawnSignature) {
                         drawPath(
                             path = path,
-                            color = Color.Black,
+                            color = strokeColor, // Use the captured color variable
                             style = Stroke(
                                 width = 3.dp.toPx(),
                                 cap = StrokeCap.Round,
