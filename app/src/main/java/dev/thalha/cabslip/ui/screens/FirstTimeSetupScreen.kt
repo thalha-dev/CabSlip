@@ -7,7 +7,9 @@ import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.platform.LocalDensity
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
@@ -15,6 +17,8 @@ import dev.thalha.cabslip.data.database.CabSlipDatabase
 import dev.thalha.cabslip.data.entity.CabInfo
 import dev.thalha.cabslip.data.repository.CabSlipRepository
 import dev.thalha.cabslip.ui.components.LogoUpload
+import dev.thalha.cabslip.ui.components.SignatureCapture
+import dev.thalha.cabslip.ui.components.saveSignatureFromPath
 import kotlinx.coroutines.launch
 
 @Composable
@@ -22,6 +26,7 @@ fun FirstTimeSetupScreen(
     onSetupComplete: () -> Unit
 ) {
     val context = LocalContext.current
+    val density = LocalDensity.current
     val scope = rememberCoroutineScope()
 
     // Initialize repository
@@ -36,6 +41,10 @@ fun FirstTimeSetupScreen(
     var logoPath by remember { mutableStateOf<String?>(null) }
     var isLoading by remember { mutableStateOf(false) }
     var errorMessage by remember { mutableStateOf("") }
+
+    // Signature handling
+    var signaturePath by remember { mutableStateOf<Path?>(null) }
+    var hasNewSignature by remember { mutableStateOf(false) }
 
     // Check if setup is already done
     LaunchedEffect(Unit) {
@@ -121,10 +130,21 @@ fun FirstTimeSetupScreen(
 
         Spacer(modifier = Modifier.height(16.dp))
 
-        // Logo Upload Section - NEW
+        // Logo Upload Section
         LogoUpload(
             onLogoSelected = { path ->
                 logoPath = path
+            }
+        )
+
+        Spacer(modifier = Modifier.height(16.dp))
+
+        // Signature Capture Section - NEW
+        SignatureCapture(
+            modifier = Modifier.fillMaxWidth(),
+            onSignatureChanged = { path, hasNew, existingPath ->
+                signaturePath = path
+                hasNewSignature = hasNew
             }
         )
 
@@ -143,7 +163,7 @@ fun FirstTimeSetupScreen(
             onClick = {
                 if (cabName.isBlank() || cabAddress.isBlank() ||
                     primaryContact.isBlank() || email.isBlank()) {
-                    errorMessage = "Please fill in all required fields"
+                    errorMessage = "Please fill in all required fields including signature"
                     return@Button
                 }
 
@@ -160,6 +180,11 @@ fun FirstTimeSetupScreen(
                             secondaryContact = if (secondaryContact.isBlank()) null else secondaryContact.trim(),
                             email = email.trim(),
                             logoPath = logoPath,
+                            ownerSignaturePath = if (hasNewSignature && signaturePath != null) {
+                                saveSignatureFromPath(context, signaturePath, density)
+                            } else {
+                                null
+                            },
                             createdAt = currentTime,
                             updatedAt = currentTime
                         )
