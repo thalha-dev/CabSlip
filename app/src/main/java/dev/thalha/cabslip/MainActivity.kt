@@ -7,8 +7,10 @@ import androidx.activity.enableEdgeToEdge
 import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.material3.MaterialTheme
 import androidx.compose.material3.Surface
+import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import dev.thalha.cabslip.ui.navigation.CabSlipNavigation
+import dev.thalha.cabslip.ui.screens.SplashScreen
 import dev.thalha.cabslip.ui.theme.CabSlipTheme
 
 class MainActivity : ComponentActivity() {
@@ -21,7 +23,15 @@ class MainActivity : ComponentActivity() {
                     modifier = Modifier.fillMaxSize(),
                     color = MaterialTheme.colorScheme.background
                 ) {
-                    CabSlipNavigation()
+                    var showSplash by remember { mutableStateOf(true) }
+
+                    if (showSplash) {
+                        SplashScreen(
+                            onSplashFinished = { showSplash = false }
+                        )
+                    } else {
+                        CabSlipNavigation()
+                    }
                 }
             }
         }
