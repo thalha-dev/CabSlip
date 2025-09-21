@@ -68,6 +68,13 @@ interface ReceiptDao {
     """)
     suspend fun getDateRangeResultsCount(fromDate: Long, toDate: Long): Int
 
+    // Stats methods for dashboard
+    @Query("SELECT SUM(totalKm) FROM receipts")
+    suspend fun getTotalKilometers(): Double?
+
+    @Query("SELECT SUM(totalFee) FROM receipts")
+    suspend fun getTotalRevenue(): Double?
+
     @Insert
     suspend fun insertReceipt(receipt: Receipt)
 

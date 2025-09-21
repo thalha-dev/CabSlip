@@ -42,6 +42,11 @@ class CabSlipRepository(
     suspend fun getDateRangeResultsCount(fromDate: Long, toDate: Long): Int =
         receiptDao.getDateRangeResultsCount(fromDate, toDate)
 
+    // Stats methods for dashboard
+    suspend fun getTotalKilometers(): Double = receiptDao.getTotalKilometers() ?: 0.0
+
+    suspend fun getTotalRevenue(): Double = receiptDao.getTotalRevenue() ?: 0.0
+
     suspend fun getReceiptById(id: String): Receipt? = receiptDao.getReceiptById(id)
 
     fun searchReceipts(query: String): Flow<List<Receipt>> = receiptDao.searchReceipts(query)

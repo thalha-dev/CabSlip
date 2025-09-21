@@ -6,6 +6,9 @@ import androidx.compose.foundation.lazy.items
 import androidx.compose.material.icons.Icons
 import androidx.compose.material.icons.filled.CheckCircle
 import androidx.compose.material.icons.filled.Warning
+import androidx.compose.material.icons.filled.Check
+import androidx.compose.material.icons.filled.Place
+import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -20,6 +23,13 @@ import dev.thalha.cabslip.data.repository.CabSlipRepository
 import java.text.SimpleDateFormat
 import java.util.*
 
+// Data class for stats summary
+data class StatsSummary(
+    val totalReceipts: Int = 0,
+    val totalKilometers: Double = 0.0,
+    val totalRevenue: Double = 0.0
+)
+
 @Composable
 fun HomeScreen(
     onReceiptClick: (String) -> Unit
@@ -28,7 +38,28 @@ fun HomeScreen(
     val database = CabSlipDatabase.getDatabase(context)
     val repository = CabSlipRepository(database.cabInfoDao(), database.receiptDao())
 
-    val recentReceipts by repository.getRecentReceipts(6).collectAsState(initial = emptyList())
+    val recentReceipts by repository.getRecentReceipts(3).collectAsState(initial = emptyList())
+    var statsLoading by remember { mutableStateOf(true) }
+    var statsSummary by remember { mutableStateOf(StatsSummary()) }
+
+    // Load stats data
+    LaunchedEffect(Unit) {
+        try {
+            val receiptsCount = repository.getTotalReceiptsCount()
+            val totalKm = repository.getTotalKilometers()
+            val totalRevenue = repository.getTotalRevenue()
+
+            statsSummary = StatsSummary(
+                totalReceipts = receiptsCount,
+                totalKilometers = totalKm,
+                totalRevenue = totalRevenue
+            )
+        } catch (e: Exception) {
+            // Handle error silently, keep default values
+        } finally {
+            statsLoading = false
+        }
+    }
 
     Column(
         modifier = Modifier
@@ -36,12 +67,87 @@ fun HomeScreen(
             .padding(16.dp)
     ) {
         Text(
-            text = "Recent Receipts",
+            text = "Dashboard",
             fontSize = 24.sp,
             fontWeight = FontWeight.Bold
         )
 
         Spacer(modifier = Modifier.height(16.dp))
+
+        // Stats Summary Section
+        Card(
+            modifier = Modifier.fillMaxWidth(),
+            colors = CardDefaults.cardColors(
+                containerColor = MaterialTheme.colorScheme.primaryContainer
+            )
+        ) {
+            Column(
+                modifier = Modifier.padding(16.dp)
+            ) {
+                Text(
+                    text = "Business Summary",
+                    fontSize = 18.sp,
+                    fontWeight = FontWeight.SemiBold,
+                    color = MaterialTheme.colorScheme.onPrimaryContainer
+                )
+
+                Spacer(modifier = Modifier.height(12.dp))
+
+                if (statsLoading) {
+                    Box(
+                        modifier = Modifier
+                            .fillMaxWidth()
+                            .height(80.dp),
+                        contentAlignment = Alignment.Center
+                    ) {
+                        CircularProgressIndicator(
+                            modifier = Modifier.size(24.dp),
+                            strokeWidth = 2.dp
+                        )
+                    }
+                } else {
+                    Row(
+                        modifier = Modifier.fillMaxWidth(),
+                        horizontalArrangement = Arrangement.SpaceEvenly
+                    ) {
+                        // Total Receipts
+                        StatCard(
+                            icon = Icons.Default.Check,
+                            value = statsSummary.totalReceipts.toString(),
+                            label = "Receipts",
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        // Total Kilometers
+                        StatCard(
+                            icon = Icons.Default.Place,
+                            value = "${String.format("%.1f", statsSummary.totalKilometers)} km",
+                            label = "Distance",
+                            modifier = Modifier.weight(1f)
+                        )
+
+                        // Total Revenue
+                        StatCard(
+                            icon = Icons.Default.Star,
+                            value = "₹${String.format("%.0f", statsSummary.totalRevenue)}",
+                            label = "Revenue",
+                            modifier = Modifier.weight(1f)
+                        )
+                    }
+                }
+            }
+        }
+
+        Spacer(modifier = Modifier.height(20.dp))
+
+        // Recent Receipts Section
+        Text(
+            text = "Recent Receipts",
+            fontSize = 20.sp,
+            fontWeight = FontWeight.SemiBold
+        )
+
+        Spacer(modifier = Modifier.height(12.dp))
 
         if (recentReceipts.isEmpty()) {
             Card(
@@ -81,6 +187,38 @@ fun HomeScreen(
                 }
             }
         }
+    }
+}
+
+@Composable
+private fun StatCard(
+    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    value: String,
+    label: String,
+    modifier: Modifier = Modifier
+) {
+    Column(
+        modifier = modifier.padding(horizontal = 8.dp),
+        horizontalAlignment = Alignment.CenterHorizontally
+    ) {
+        Icon(
+            imageVector = icon,
+            contentDescription = null,
+            tint = MaterialTheme.colorScheme.onPrimaryContainer,
+            modifier = Modifier.size(24.dp)
+        )
+        Spacer(modifier = Modifier.height(4.dp))
+        Text(
+            text = value,
+            fontSize = 16.sp,
+            fontWeight = FontWeight.Bold,
+            color = MaterialTheme.colorScheme.onPrimaryContainer
+        )
+        Text(
+            text = label,
+            fontSize = 12.sp,
+            color = MaterialTheme.colorScheme.onPrimaryContainer.copy(alpha = 0.7f)
+        )
     }
 }
 
