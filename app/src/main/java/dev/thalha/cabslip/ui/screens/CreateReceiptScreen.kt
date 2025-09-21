@@ -5,22 +5,19 @@ import androidx.compose.foundation.rememberScrollState
 import androidx.compose.foundation.text.KeyboardOptions
 import androidx.compose.foundation.verticalScroll
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Share
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.graphics.Path
 import androidx.compose.ui.platform.LocalContext
 import androidx.compose.ui.platform.LocalDensity
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.input.KeyboardType
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
 import androidx.compose.ui.window.Dialog
+import dev.thalha.cabslip.R
 import dev.thalha.cabslip.data.database.CabSlipDatabase
 import dev.thalha.cabslip.data.entity.Receipt
 import dev.thalha.cabslip.data.repository.CabSlipRepository
@@ -179,33 +176,39 @@ fun CreateReceiptScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = dateFormatter.format(Date(tripStartDate)),
-                    onValueChange = { },
-                    label = { Text("Start Date") },
-                    modifier = Modifier.fillMaxWidth(),
-                    readOnly = true,
-                    trailingIcon = {
-                        IconButton(onClick = { showStartDatePicker = true }) {
-                            Icon(Icons.Default.DateRange, contentDescription = "Select Date")
+                // Trip Start Date
+                Column {
+                    OutlinedTextField(
+                        value = dateFormatter.format(Date(tripStartDate)),
+                        onValueChange = { },
+                        label = { Text("Start Date") },
+                        modifier = Modifier.fillMaxWidth(),
+                        readOnly = true,
+                        trailingIcon = {
+                            IconButton(onClick = { showStartDatePicker = true }) {
+                                Icon(painterResource(id = R.drawable.outline_date_range_24), contentDescription = "Select Date")
+                            }
                         }
-                    }
-                )
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = timeFormatter.format(Date(tripStartDate)),
-                    onValueChange = { },
-                    label = { Text("Start Time") },
-                    modifier = Modifier.fillMaxWidth(),
-                    readOnly = true,
-                    trailingIcon = {
-                        IconButton(onClick = { showStartTimePicker = true }) {
-                            Icon(Icons.Default.Edit, contentDescription = "Select Time")
+                // Trip Start Time
+                Column {
+                    OutlinedTextField(
+                        value = timeFormatter.format(Date(tripStartDate)),
+                        onValueChange = { },
+                        label = { Text("Start Time") },
+                        modifier = Modifier.fillMaxWidth(),
+                        readOnly = true,
+                        trailingIcon = {
+                            IconButton(onClick = { showStartTimePicker = true }) {
+                                Icon(painterResource(id = R.drawable.baseline_access_time_24), contentDescription = "Select Time")
+                            }
                         }
-                    }
-                )
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(12.dp))
 
@@ -218,43 +221,48 @@ fun CreateReceiptScreen(
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = tripEndDate?.let { dateFormatter.format(Date(it)) } ?: "",
-                    onValueChange = { },
-                    label = { Text("End Date") },
-                    modifier = Modifier.fillMaxWidth(),
-                    readOnly = true,
-                    trailingIcon = {
-                        Row {
-                            if (tripEndDate != null) {
-                                IconButton(onClick = { tripEndDate = null }) {
-                                    Icon(Icons.Default.Clear, contentDescription = "Clear Date")
+                // Trip End Date
+                Column {
+                    OutlinedTextField(
+                        value = tripEndDate?.let { dateFormatter.format(Date(it)) } ?: "",
+                        onValueChange = { },
+                        label = { Text("End Date") },
+                        modifier = Modifier.fillMaxWidth(),
+                        readOnly = true,
+                        trailingIcon = {
+                            Row {
+                                if (tripEndDate != null) {
+                                    IconButton(onClick = { tripEndDate = null }) {
+                                        Icon(painterResource(id = R.drawable.outline_delete_24), contentDescription = "Clear Date")
+                                    }
+                                }
+                                IconButton(onClick = { showEndDatePicker = true }) {
+                                    Icon(painterResource(id = R.drawable.outline_date_range_24), contentDescription = "Select Date")
                                 }
                             }
-                            IconButton(onClick = { showEndDatePicker = true }) {
-                                Icon(Icons.Default.DateRange, contentDescription = "Select Date")
-                            }
                         }
-                    }
-                )
+                    )
+                }
 
                 Spacer(modifier = Modifier.height(8.dp))
 
-                OutlinedTextField(
-                    value = tripEndDate?.let { timeFormatter.format(Date(it)) } ?: "",
-                    onValueChange = { },
-                    label = { Text("End Time") },
-                    modifier = Modifier.fillMaxWidth(),
-                    readOnly = true,
-                    trailingIcon = {
-                        IconButton(
-                            onClick = { showEndTimePicker = true },
-                            enabled = tripEndDate != null
-                        ) {
-                            Icon(Icons.Default.Edit, contentDescription = "Select Time")
-                        }
+                // Trip End Time
+                if (tripEndDate != null) {
+                    Column {
+                        OutlinedTextField(
+                            value = tripEndDate?.let { timeFormatter.format(Date(it)) } ?: "",
+                            onValueChange = { },
+                            label = { Text("End Time") },
+                            modifier = Modifier.fillMaxWidth(),
+                            readOnly = true,
+                            trailingIcon = {
+                                IconButton(onClick = { showEndTimePicker = true }) {
+                                    Icon(painterResource(id = R.drawable.baseline_access_time_24), contentDescription = "Select Time")
+                                }
+                            }
+                        )
                     }
-                )
+                }
             }
         }
 
@@ -595,7 +603,7 @@ fun CreateReceiptScreen(
                     },
                     modifier = Modifier.weight(1f)
                 ) {
-                    Icon(Icons.Default.Share, contentDescription = null)
+                    Icon(painterResource(id = R.drawable.baseline_attach_money_24), contentDescription = null)
                     Spacer(modifier = Modifier.width(8.dp))
                     Text("Share PDF")
                 }

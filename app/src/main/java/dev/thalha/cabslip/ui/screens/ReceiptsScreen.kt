@@ -4,18 +4,16 @@ import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
 import androidx.compose.foundation.lazy.rememberLazyListState
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Search
-import androidx.compose.material.icons.filled.DateRange
-import androidx.compose.material.icons.filled.Clear
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.thalha.cabslip.R
 import dev.thalha.cabslip.data.database.CabSlipDatabase
 import dev.thalha.cabslip.data.repository.CabSlipRepository
 import dev.thalha.cabslip.data.entity.Receipt
@@ -115,7 +113,7 @@ fun ReceiptsScreen(
                 }
             },
             label = { Text("Search receipts...") },
-            leadingIcon = { Icon(Icons.Default.Search, contentDescription = "Search") },
+            leadingIcon = { Icon(painterResource(id = R.drawable.baseline_search_24), contentDescription = "Search") },
             modifier = Modifier.fillMaxWidth(),
             singleLine = true
         )
@@ -153,7 +151,7 @@ fun ReceiptsScreen(
                             }
                         ) {
                             Icon(
-                                Icons.Default.Clear,
+                                painterResource(id = R.drawable.outline_delete_24),
                                 contentDescription = "Clear date filter",
                                 tint = MaterialTheme.colorScheme.primary
                             )
@@ -169,7 +167,7 @@ fun ReceiptsScreen(
                     modifier = Modifier.fillMaxWidth()
                 ) {
                     Icon(
-                        Icons.Default.DateRange,
+                        painterResource(id = R.drawable.outline_date_range_24),
                         contentDescription = null,
                         modifier = Modifier.size(20.dp)
                     )

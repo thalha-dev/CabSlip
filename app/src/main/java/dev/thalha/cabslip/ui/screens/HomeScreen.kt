@@ -3,20 +3,17 @@ package dev.thalha.cabslip.ui.screens
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.lazy.LazyColumn
 import androidx.compose.foundation.lazy.items
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.CheckCircle
-import androidx.compose.material.icons.filled.Warning
-import androidx.compose.material.icons.filled.Check
-import androidx.compose.material.icons.filled.Place
-import androidx.compose.material.icons.filled.Star
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
+import androidx.compose.ui.graphics.painter.Painter
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.thalha.cabslip.R
 import dev.thalha.cabslip.data.database.CabSlipDatabase
 import dev.thalha.cabslip.data.entity.Receipt
 import dev.thalha.cabslip.data.repository.CabSlipRepository
@@ -112,7 +109,7 @@ fun HomeScreen(
                     ) {
                         // Total Receipts
                         StatCard(
-                            icon = Icons.Default.Check,
+                            iconRes = R.drawable.outline_receipt_24,
                             value = statsSummary.totalReceipts.toString(),
                             label = "Receipts",
                             modifier = Modifier.weight(1f)
@@ -120,7 +117,7 @@ fun HomeScreen(
 
                         // Total Kilometers
                         StatCard(
-                            icon = Icons.Default.Place,
+                            iconRes = R.drawable.outline_home_24, // Using home as placeholder for distance
                             value = "${String.format("%.1f", statsSummary.totalKilometers)} km",
                             label = "Distance",
                             modifier = Modifier.weight(1f)
@@ -128,7 +125,7 @@ fun HomeScreen(
 
                         // Total Revenue
                         StatCard(
-                            icon = Icons.Default.Star,
+                            iconRes = R.drawable.baseline_attach_money_24,
                             value = "₹${String.format("%.0f", statsSummary.totalRevenue)}",
                             label = "Revenue",
                             modifier = Modifier.weight(1f)
@@ -192,7 +189,7 @@ fun HomeScreen(
 
 @Composable
 private fun StatCard(
-    icon: androidx.compose.ui.graphics.vector.ImageVector,
+    iconRes: Int,
     value: String,
     label: String,
     modifier: Modifier = Modifier
@@ -202,7 +199,7 @@ private fun StatCard(
         horizontalAlignment = Alignment.CenterHorizontally
     ) {
         Icon(
-            imageVector = icon,
+            painter = painterResource(id = iconRes),
             contentDescription = null,
             tint = MaterialTheme.colorScheme.onPrimaryContainer,
             modifier = Modifier.size(24.dp)
@@ -277,8 +274,10 @@ fun ReceiptCard(
                     )
                     Spacer(modifier = Modifier.height(4.dp))
                     Icon(
-                        imageVector = if (receipt.ownerSignaturePath != null)
-                            Icons.Default.CheckCircle else Icons.Default.Warning,
+                        painter = painterResource(
+                            id = if (receipt.ownerSignaturePath != null)
+                                R.drawable.outline_receipt_24 else R.drawable.baseline_warning_24
+                        ),
                         contentDescription = if (receipt.ownerSignaturePath != null)
                             "Signed" else "No signature",
                         tint = if (receipt.ownerSignaturePath != null)

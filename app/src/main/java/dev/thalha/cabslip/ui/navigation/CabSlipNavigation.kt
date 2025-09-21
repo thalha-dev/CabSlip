@@ -5,13 +5,6 @@ import androidx.compose.foundation.layout.fillMaxSize
 import androidx.compose.foundation.layout.fillMaxWidth
 import androidx.compose.foundation.layout.padding
 import androidx.compose.foundation.layout.size
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Edit
-import androidx.compose.material.icons.filled.Home
-import androidx.compose.material.icons.filled.Info
-import androidx.compose.material.icons.filled.List
-import androidx.compose.material.icons.filled.Settings
 import androidx.compose.material3.CircularProgressIndicator
 import androidx.compose.material3.ExperimentalMaterial3Api
 import androidx.compose.material3.Icon
@@ -27,6 +20,7 @@ import androidx.compose.runtime.remember
 import androidx.compose.runtime.setValue
 import androidx.compose.ui.Modifier
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.unit.dp
 import androidx.navigation.compose.NavHost
 import androidx.navigation.compose.composable
@@ -41,13 +35,16 @@ import dev.thalha.cabslip.ui.screens.FirstTimeSetupScreen
 import dev.thalha.cabslip.ui.screens.HomeScreen
 import dev.thalha.cabslip.ui.screens.ReceiptsScreen
 
-sealed class Screen(val route: String, val title: String, val icon: androidx.compose.ui.graphics.vector.ImageVector) {
-    object Home : Screen("home", "Home", Icons.Default.Home)
-    object Receipts : Screen("receipts", "Receipts", Icons.Default.List)
-    object CabInfo : Screen("cab_info", "Cab Info", Icons.Default.Info)
-    object CreateReceipt : Screen("create_receipt", "Create Receipt", Icons.Default.Add)
-    object EditReceipt : Screen("edit_receipt/{receiptId}", "Edit Receipt", Icons.Default.Edit)
-    object FirstTimeSetup : Screen("first_time_setup", "Setup", Icons.Default.Settings)
+// Update Screen object to use drawable resources instead of library icons
+sealed class Screen(val route: String, val title: String, val iconRes: Int) {
+    object Home : Screen("home", "Home", dev.thalha.cabslip.R.drawable.outline_home_24)
+    object CreateReceipt : Screen("create_receipt", "Create Receipt", dev.thalha.cabslip.R.drawable.outline_add_24)
+    object Receipts : Screen("receipts", "Receipts", dev.thalha.cabslip.R.drawable.outline_receipt_24)
+    object CabInfo : Screen("cab_info", "Cab Info", dev.thalha.cabslip.R.drawable.outline_info_24)
+    object EditReceipt : Screen("edit_receipt/{receiptId}", "Edit Receipt", dev.thalha.cabslip.R.drawable.outline_receipt_24) {
+        fun createRoute(receiptId: String) = "edit_receipt/$receiptId"
+    }
+    object FirstTimeSetup : Screen("first_time_setup", "Setup", dev.thalha.cabslip.R.drawable.outline_info_24)
 }
 
 @OptIn(ExperimentalMaterial3Api::class)
@@ -108,7 +105,7 @@ private fun MainAppNavigation() {
                 NavigationBarItem(
                     icon = {
                         Icon(
-                            imageVector = Icons.Default.Home,
+                            painter = painterResource(id = dev.thalha.cabslip.R.drawable.outline_home_24),
                             contentDescription = "Home",
                             modifier = Modifier.size(24.dp)
                         )
@@ -128,7 +125,7 @@ private fun MainAppNavigation() {
                 NavigationBarItem(
                     icon = {
                         Icon(
-                            imageVector = Icons.Default.Add,
+                            painter = painterResource(id = dev.thalha.cabslip.R.drawable.outline_add_24),
                             contentDescription = "Create Receipt",
                             modifier = Modifier.size(24.dp)
                         )
@@ -147,7 +144,7 @@ private fun MainAppNavigation() {
                 NavigationBarItem(
                     icon = {
                         Icon(
-                            imageVector = Icons.Default.List,
+                            painter = painterResource(id = dev.thalha.cabslip.R.drawable.outline_receipt_24),
                             contentDescription = "Receipts",
                             modifier = Modifier.size(24.dp)
                         )
@@ -167,7 +164,7 @@ private fun MainAppNavigation() {
                 NavigationBarItem(
                     icon = {
                         Icon(
-                            imageVector = Icons.Default.Info,
+                            painter = painterResource(id = dev.thalha.cabslip.R.drawable.outline_info_24),
                             contentDescription = "Cab Info",
                             modifier = Modifier.size(24.dp)
                         )

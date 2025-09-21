@@ -12,9 +12,6 @@ import androidx.compose.foundation.border
 import androidx.compose.foundation.clickable
 import androidx.compose.foundation.layout.*
 import androidx.compose.foundation.shape.RoundedCornerShape
-import androidx.compose.material.icons.Icons
-import androidx.compose.material.icons.filled.Add
-import androidx.compose.material.icons.filled.Delete
 import androidx.compose.material3.*
 import androidx.compose.runtime.*
 import androidx.compose.ui.Alignment
@@ -23,10 +20,12 @@ import androidx.compose.ui.draw.clip
 import androidx.compose.ui.graphics.asImageBitmap
 import androidx.compose.ui.layout.ContentScale
 import androidx.compose.ui.platform.LocalContext
+import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.text.style.TextAlign
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import dev.thalha.cabslip.R
 import kotlinx.coroutines.launch
 import java.io.File
 import java.io.FileOutputStream
@@ -151,7 +150,7 @@ fun LogoUpload(
                                     )
                             ) {
                                 Icon(
-                                    Icons.Default.Delete,
+                                    painter = painterResource(id = R.drawable.outline_delete_24),
                                     contentDescription = "Remove Logo",
                                     tint = MaterialTheme.colorScheme.onError
                                 )
@@ -174,7 +173,7 @@ fun LogoUpload(
                             verticalArrangement = Arrangement.Center
                         ) {
                             Icon(
-                                Icons.Default.Add,
+                                painter = painterResource(id = R.drawable.outline_add_24),
                                 contentDescription = "Add Logo",
                                 modifier = Modifier.size(48.dp),
                                 tint = MaterialTheme.colorScheme.primary
